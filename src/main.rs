@@ -11,7 +11,7 @@ extern crate serde_json;
 
 use clap::Parser;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::string::String;
 
 use std::path::Path;
@@ -38,8 +38,9 @@ fn main() {
         Err(error) => panic!("{}", error),
         Ok(file) => file,
     };
+    let mut buffer_reader = BufReader::new(file);
     let mut contents = String::new();
-    match file.read_to_string(&mut contents) {
+    match buffer_reader.read_to_string(&mut contents) {
         Ok(_) => match serde_json::from_str(&contents) {
             Ok(valid_json) => {
                 if args.pretty {
@@ -48,6 +49,7 @@ fn main() {
                         serde_json::to_string_pretty(&valid_json).unwrap()
                     )
                 }
+                // walk through the JSON content with the provided selector.
                 match walker(&valid_json, Some(selector.as_str())) {
                     Some(items) => match items {
                         Ok(results) => println!(

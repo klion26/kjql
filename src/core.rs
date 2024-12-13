@@ -10,10 +10,13 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
             .iter()
             .enumerate()
             .map(|(i, s)| -> Result<Value, String> {
+                // array case
                 if let Ok(index) = s.parse::<isize>() {
-                    if (index as isize).is_negative() {
+                    // negative index
+                    if index.is_negative() {
                         Err(String::from("Invalid negative array index"))
                     } else {
+                        // found a null value in the array
                         if inner_json[index as usize] == Value::Null {
                             let error_message = match inner_json.as_array() {
                                 Some(array) => [
@@ -34,17 +37,19 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                 ]
                                 .join(" "),
                             };
-                            println!("# {:?} #", inner_json.as_array());
-                            Err(error_message)
+                            return Err(error_message);
                         } else {
+                            // match found.
                             inner_json = &inner_json[index as usize];
                             Ok(inner_json.clone())
                         }
                     }
                 } else {
+                    // an unterminated selector has been provided.
                     if s.is_empty() {
-                        Err(String::from("Unterminated selector found"))
+                        return Err(String::from("Unterminated selector found"))
                     } else {
+                        // found a null value in the object
                         if inner_json[s] == Value::Null {
                             if i == 0 {
                                 Err(["Node (", s, ") is not the root element"]
