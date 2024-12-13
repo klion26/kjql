@@ -28,7 +28,7 @@ type Selection = Result<Vec<Value>, String>;
 
 fn get_selection(json: &Value, selector: Option<&str>) -> Option<Selection> {
     let mut inner_json = json;
-    let throw = |s, selector: &Vec<&str>, i: usize | -> String {
+    let throw = |s, selector: &Vec<&str>, i: usize| -> String {
         ["Node (", s, ") not found on parent (", selector[i - 1], ")"].join(" ")
     };
 
@@ -54,7 +54,8 @@ fn get_selection(json: &Value, selector: Option<&str>) -> Option<Selection> {
                 } else {
                     if inner_json[s] == Value::Null {
                         if i == 0 {
-                            Err(["Node (", s, ") is not the root element"].join(" "))
+                            Err(["Node (", s, ") is not the root element"]
+                                .join(" "))
                         } else {
                             Err(throw(s, &selector, i))
                         }
@@ -63,7 +64,8 @@ fn get_selection(json: &Value, selector: Option<&str>) -> Option<Selection> {
                         Ok(inner_json.clone())
                     }
                 }
-            }).collect();
+            })
+            .collect();
         Some(items)
     } else {
         None
@@ -83,24 +85,31 @@ fn main() {
     };
     let mut contents = String::new();
     match file.read_to_string(&mut contents) {
-        Ok(_) => {
-            match serde_json::from_str(&contents) {
-                Ok(valid_json) => {
-                    if args.pretty {
-                        println!("{}", serde_json::to_string_pretty(&valid_json).unwrap())
-                    }
-                    match get_selection(&valid_json, Some(selector.as_str())) {
-                        Some(items) => match items {
-                            Ok(results) => println!("{}", serde_json::to_string_pretty(&results.last()).unwrap()),
-                            Err(error) => println!("{}", error),
-                        },
-                        None => println!("has no value"),
-                    }
+        Ok(_) => match serde_json::from_str(&contents) {
+            Ok(valid_json) => {
+                if args.pretty {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&valid_json).unwrap()
+                    )
                 }
-                Err(_) => println!("Invalid JSON file!"),
+                match get_selection(&valid_json, Some(selector.as_str())) {
+                    Some(items) => match items {
+                        Ok(results) => println!(
+                            "{}",
+                            serde_json::to_string_pretty(&results.last())
+                                .unwrap()
+                        ),
+                        Err(error) => println!("{}", error),
+                    },
+                    None => println!("has no value"),
+                }
             }
+            Err(_) => println!("Invalid JSON file!"),
+        },
+        Err(error) => {
+            panic!("Couldn't read {}: {}", path.display(), error.description())
         }
-        Err(error) => panic!("Couldn't read {}: {}", path.display(), error.description()),
     }
 
     println!("Hello, world!");
