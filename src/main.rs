@@ -1,7 +1,9 @@
 #![feature(future_join)]
 
 mod core;
+mod tests;
 mod types;
+mod utils;
 
 use crate::core::walker;
 extern crate clap;

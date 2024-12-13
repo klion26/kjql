@@ -1,10 +1,7 @@
-use serde_json::Value;
 use crate::types::Selection;
+use serde_json::Value;
 
-pub fn walker(
-    json: &Value,
-    selector: Option<&str>,
-) -> Option<Selection> {
+pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
     let mut inner_json = json;
     if let Some(selector) = selector {
         let selector: Vec<&str> = selector.split('.').collect();
@@ -26,14 +23,16 @@ pub fn walker(
                                     selector[i - 1],
                                     ") has a length of",
                                     &(array.len()).to_string(),
-                                ].join(" "),
+                                ]
+                                .join(" "),
                                 // Trying to acces an index on a node which
                                 // is not an arrya.
                                 None => [
                                     "Node (",
                                     selector[i - 1],
                                     ") is not an array",
-                                ].join(" "),
+                                ]
+                                .join(" "),
                             };
                             println!("# {:?} #", inner_json.as_array());
                             Err(error_message)
@@ -57,7 +56,8 @@ pub fn walker(
                                     ") not found on parent (",
                                     selector[i - 1],
                                     ")",
-                                ].join(" "))
+                                ]
+                                .join(" "))
                             }
                         } else {
                             inner_json = &inner_json[s];
@@ -65,7 +65,8 @@ pub fn walker(
                         }
                     }
                 }
-            }).collect();
+            })
+            .collect();
         Some(items)
     } else {
         None
