@@ -86,6 +86,11 @@ mod tests {
             Some(Err(String::from("Node ( text ) is not an array"))),
             walker(&json, selector)
         );
+        let root_selector: Option<&str> = Some("1");
+        assert_eq!(
+            Some(Err(String::from("Root element is not an array"))),
+            walker(&json, root_selector)
+        );
     }
 
     #[test]

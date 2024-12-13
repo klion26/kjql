@@ -30,12 +30,18 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                 .join(" "),
                                 // Trying to acces an index on a node which
                                 // is not an arrya.
-                                None => [
-                                    "Node (",
-                                    selector[i - 1],
-                                    ") is not an array",
-                                ]
-                                .join(" "),
+                                None => {
+                                    if selector.len() == 1 {
+                                        ["Root element is not an array"].join(" ")
+                                    } else {
+                                        [
+                                            "Node (",
+                                            selector[i - 1],
+                                            ") is not an array",
+                                        ]
+                                            .join(" ")
+                                    }
+                                },
                             };
                             return Err(error_message);
                         } else {
