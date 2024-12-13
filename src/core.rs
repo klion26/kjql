@@ -19,29 +19,46 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                         // found a null value in the array
                         if inner_json[index as usize] == Value::Null {
                             let error_message = match inner_json.as_array() {
-                                Some(array) => [
-                                    "Index (",
-                                    s,
-                                    ") is out of bound, node (",
-                                    selector[i - 1],
-                                    ") has a length of",
-                                    &(array.len()).to_string(),
-                                ]
-                                .join(" "),
+                                // Trying to access an out of bound index on a
+                                // node
+                                // or on the root element.
+                                Some(array) => {
+                                    if selector.len() == 1 {
+                                        [
+                                            "Index (",
+                                            s,
+                                            ") is out of bound, root elment \
+                                             has a length of",
+                                            &array.len().to_string(),
+                                        ]
+                                        .join(" ")
+                                    } else {
+                                        [
+                                            "Index (",
+                                            s,
+                                            ") is out of bound, node (",
+                                            selector[i - 1],
+                                            ") has a length of",
+                                            &(array.len()).to_string(),
+                                        ]
+                                        .join(" ")
+                                    }
+                                }
                                 // Trying to acces an index on a node which
                                 // is not an arrya.
                                 None => {
                                     if selector.len() == 1 {
-                                        ["Root element is not an array"].join(" ")
+                                        ["Root element is not an array"]
+                                            .join(" ")
                                     } else {
                                         [
                                             "Node (",
                                             selector[i - 1],
                                             ") is not an array",
                                         ]
-                                            .join(" ")
+                                        .join(" ")
                                     }
-                                },
+                                }
                             };
                             return Err(error_message);
                         } else {
@@ -53,7 +70,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                 } else {
                     // an unterminated selector has been provided.
                     if s.is_empty() {
-                        return Err(String::from("Unterminated selector found"))
+                        return Err(String::from("Unterminated selector found"));
                     } else {
                         // found a null value in the object
                         if inner_json[s] == Value::Null {

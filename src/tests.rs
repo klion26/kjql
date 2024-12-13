@@ -4,6 +4,7 @@ use serde_json::Value;
 #[cfg(test)]
 mod tests {
     use super::*;
+    const ARRAY_DATA: &str = r#"[1, 2, 3]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3],
        "nested": {
@@ -65,6 +66,18 @@ mod tests {
                 "Index ( 3 ) is out of bound, node ( array ) has a length of 3"
             ))),
             walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn get_out_of_bound_item_in_root_array() {
+        let json_array: Value = serde_json::from_str(ARRAY_DATA).unwrap();
+        let array_selector: Option<&str> = Some("3");
+        assert_eq!(
+            Some(Err(String::from(
+                "Index ( 3 ) is out of bound, root elment has a length of 3"
+            ))),
+            walker(&json_array, array_selector)
         );
     }
 
