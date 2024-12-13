@@ -92,6 +92,15 @@ mod tests {
     }
 
     #[test]
+    fn get_negative_index_in_root_array() {
+        let json_array: Value = serde_json::from_str(ARRAY_DATA).unwrap();
+        let array_selector: Option<&str> = Some("-1");
+        assert_eq!(
+            Some(Err(String::from("Invalid negative array index"))),
+            walker(&json_array, array_selector)
+        );
+    }
+    #[test]
     fn get_index_in_non_array() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("text.1");
