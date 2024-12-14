@@ -6,5 +6,6 @@ authors = ["klion26 <klion26@apache.org>"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"]}
+regex = "1.5.4"
 serde_json = "1.0.133"
 toml = "0.8.19"

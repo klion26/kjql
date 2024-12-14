@@ -1,10 +1,28 @@
 use crate::types::Selection;
+use regex::Regex;
 use serde_json::Value;
+
+// get the trimmed text of the match with a default of an empty string
+// if the group didn't participate in the match.
+fn get_selector(capture: regex::Captures<'_>) -> String {
+    let cap = capture.get(0).map_or("", |m| m.as_str()).trim();
+    if cap.starts_with('\"') {
+        let cap_string = String::from(cap);
+        // Drop the enclosing double quotes in this case.
+        let inner_cap = &cap_string[1..cap_string.len() - 1];
+        String::from(inner_cap)
+    } else {
+        String::from(cap)
+    }
+}
 
 pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
     let mut inner_json = json;
     if let Some(selector) = selector {
-        let selector: Vec<&str> = selector.split('.').collect();
+        // Capture groups of double quoted selectors and simple ones surrounded by dots.
+        let re = Regex::new(r#"("[^"]+")|([^.]+)"#).unwrap();
+        let selector: Vec<String> = re.captures_iter(selector).map(get_selector).collect();
+
         // Returns Result of values or Err early on, stopping the iteration.
         let items: Selection = selector
             .iter()
@@ -37,7 +55,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                             "Index (",
                                             s,
                                             ") is out of bound, node (",
-                                            selector[i - 1],
+                                            selector[i - 1].as_str(),
                                             ") has a length of",
                                             &(array.len()).to_string(),
                                         ]
@@ -53,7 +71,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                     } else {
                                         [
                                             "Node (",
-                                            selector[i - 1],
+                                            selector[i - 1].as_str(),
                                             ") is not an array",
                                         ]
                                         .join(" ")
@@ -82,7 +100,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                     "Node (",
                                     s,
                                     ") not found on parent (",
-                                    selector[i - 1],
+                                    selector[i - 1].as_str(),
                                     ")",
                                 ]
                                 .join(" "))
