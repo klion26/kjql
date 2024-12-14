@@ -7,6 +7,7 @@ mod utils;
 
 use crate::core::walker;
 extern crate clap;
+#[macro_use]
 extern crate serde_json;
 
 use clap::Parser;
