@@ -21,6 +21,16 @@ kjql package.json devDependencies.react
 kjql package.json keywords.3
 ```
 
+Given the following JSON file:
+```shell
+{
+  ".valid": 1337
+}
+```
+You can access the `.valid` key as follow:
+```shell
+kjql package.json '".valid"'
+```
 And get some (limited) help for now.
 ```shell
 kjql --help

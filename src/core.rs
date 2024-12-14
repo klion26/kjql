@@ -4,7 +4,7 @@ use serde_json::Value;
 
 // get the trimmed text of the match with a default of an empty string
 // if the group didn't participate in the match.
-fn get_selector(capture: regex::Captures<'_>) -> String {
+fn get_selector(capture: &regex::Captures<'_>) -> String {
     let cap = capture.get(0).map_or("", |m| m.as_str()).trim();
     if cap.starts_with('\"') {
         let cap_string = String::from(cap);
@@ -19,9 +19,13 @@ fn get_selector(capture: regex::Captures<'_>) -> String {
 pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
     let mut inner_json = json;
     if let Some(selector) = selector {
-        // Capture groups of double quoted selectors and simple ones surrounded by dots.
+        // Capture groups of double quoted selectors and simple ones surrounded
+        // by dots.
         let re = Regex::new(r#"("[^"]+")|([^.]+)"#).unwrap();
-        let selector: Vec<String> = re.captures_iter(selector).map(get_selector).collect();
+        let selector: Vec<String> = re
+            .captures_iter(selector)
+            .map(|capture| get_selector(&capture))
+            .collect();
 
         // Returns Result of values or Err early on, stopping the iteration.
         let items: Selection = selector
@@ -78,7 +82,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                     }
                                 }
                             };
-                            return Err(error_message);
+                            Err(error_message)
                         } else {
                             // match found.
                             inner_json = &inner_json[index as usize];
@@ -88,7 +92,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                 } else {
                     // an unterminated selector has been provided.
                     if s.is_empty() {
-                        return Err(String::from("Unterminated selector found"));
+                        Err(String::from("Unterminated selector found"))
                     } else {
                         // found a null value in the object
                         if inner_json[s] == Value::Null {
