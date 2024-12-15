@@ -2,6 +2,7 @@ use crate::types::{Selection, Selector};
 use regex::Regex;
 use serde_json::{json, Value};
 use std::string::String;
+use crate::utils::get_node_or_range;
 
 // get the trimmed text of the match with a default of an empty string
 // if the group didn't participate in the match.
@@ -103,7 +104,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                         }
                     }
                     // range selector
-                    Selector::Range((start, end)) => range_slector(
+                    Selector::Range((start, end)) => range_selector(
                         i,
                         &inner_json.clone(),
                         *start,
@@ -149,10 +150,7 @@ pub fn array_walker(
                         "Index (",
                         s,
                         ") is out of bound, node (",
-                        match &selector[i - 1] {
-                            Selector::Default(value) => value.as_str(),
-                            Selector::Range(range) => "0:3",
-                        },
+                        &get_node_or_range(&selector[i - 1]),
                         ") has a length of",
                         &(array.len()).to_string(),
                     ]
@@ -167,10 +165,7 @@ pub fn array_walker(
                 } else {
                     [
                         "Node (",
-                        match &selector[i - 1] {
-                            Selector::Default(value) => value.as_str(),
-                            Selector::Range(range) => "0:3",
-                        },
+                        &get_node_or_range(&selector[i - 1]),
                         ") is not an array",
                     ]
                     .join(" ")
@@ -184,7 +179,7 @@ pub fn array_walker(
     Ok(inner_json[index as usize].clone())
 }
 
-pub fn range_slector(
+pub fn range_selector(
     i: usize,
     inner_json: &Value,
     start: usize,
@@ -195,7 +190,7 @@ pub fn range_slector(
     // check the range validity
     // if this is array
     if let Some(inner_arrar) = inner_json.as_array() {
-        if inner_arrar.len() < start || inner_arrar.len() < end {
+        if inner_arrar.len() <= start || inner_arrar.len() <= end {
             return Err(if selector.len() == 1 {
                 [
                     "Range (",
@@ -214,10 +209,7 @@ pub fn range_slector(
                     ":",
                     end.to_string().as_str(),
                     ") is out of bound, node (",
-                    match &selector[i - 1] {
-                        Selector::Default(value) => value.as_str(),
-                        Selector::Range(range) => "0:3",
-                    },
+                    &get_node_or_range(&selector[i - 1]),
                     ") has a length of",
                     &(inner_arrar.len().to_string()),
                 ]
@@ -225,6 +217,8 @@ pub fn range_slector(
             });
         }
 
+
+        // what if start < 0 and end > len?
         Ok(if is_default {
             json!(inner_arrar[start..(end + 1)])
         } else {
@@ -246,10 +240,7 @@ pub fn range_slector(
         } else {
             return Err([
                 "Node (",
-                match &selector[i - 1] {
-                    Selector::Default(value) => value.as_str(),
-                    Selector::Range(range) => "0:3",
-                },
+                &get_node_or_range(&selector[i - 1]),
                 ") is not an array",
             ]
             .join(" "));
