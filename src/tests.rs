@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use serde_json::Value;
+    use crate::core::walker;
     use super::*;
     const ARRAY_DATA: &str = r#"[1, 2, 3]"#;
     const DATA: &str = r#"{
@@ -13,6 +15,8 @@ mod tests {
        "text": "some text",
        ".property..": "This is valid JSON!",
        "\"": "This is valid JSON as well",
+       " ": "Yup, this too 🐼!",
+       "": "Yup, again 🐨!",
        "mix": [{"first": 1}],
        "range": [1, 2, 3, 4, 5, 6, 7]
        }
@@ -142,6 +146,21 @@ mod tests {
             Err(String::from("Unterminated selector found")),
             walker(&json, selector)
         );
+    }
+
+    #[test]
+    fn get_weird_json() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let dot_selector: Option<&str> = Some(r#"".property..""#);
+        let quote_selector: Option<&str> = Some(r#"""""#);
+        let space_selector: Option<&str> = Some(r#"" ""#);
+        let empty_selector: Option<&str> = Some(r#""""#);
+        assert_eq!(
+            Ok(json[".property.."].clone()),
+            walker(&json, dot_selector));
+        assert_eq!(Ok(json[r#"""#].clone()), walker(&json, quote_selector));
+        assert_eq!(Ok(json[r#" "#].clone()), walker(&json, space_selector));
+        assert_eq!(Ok(json[r#""#].clone()), walker(&json, empty_selector));
     }
 
     #[test]
