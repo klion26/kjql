@@ -25,40 +25,28 @@ mod tests {
     fn get_test() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("text");
-        assert_eq!(
-            Some(Ok(vec![json["text"].clone()])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json["text"].clone()), walker(&json, selector));
     }
 
     #[test]
     fn get_number() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("number");
-        assert_eq!(
-            Some(Ok(vec![json["number"].clone()])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json["number"].clone()), walker(&json, selector));
     }
 
     #[test]
     fn get_array() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("array");
-        assert_eq!(
-            Some(Ok(vec![json["array"].clone()])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json["array"].clone()), walker(&json, selector));
     }
 
     #[test]
     fn get_array_item() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("array.0");
-        assert_eq!(
-            Some(Ok(vec![json["array"].clone(), json["array"][0].clone()])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json["array"][0].clone()), walker(&json, selector));
     }
 
     #[test]
@@ -66,9 +54,9 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("array.3");
         assert_eq!(
-            Some(Err(String::from(
+            Err(String::from(
                 "Index ( 3 ) is out of bound, node ( array ) has a length of 3"
-            ))),
+            )),
             walker(&json, selector)
         );
     }
@@ -78,9 +66,9 @@ mod tests {
         let json_array: Value = serde_json::from_str(ARRAY_DATA).unwrap();
         let array_selector: Option<&str> = Some("3");
         assert_eq!(
-            Some(Err(String::from(
+            Err(String::from(
                 "Index ( 3 ) is out of bound, root elment has a length of 3"
-            ))),
+            )),
             walker(&json_array, array_selector)
         );
     }
@@ -90,7 +78,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("array.-1");
         assert_eq!(
-            Some(Err(String::from("Invalid negative array index"))),
+            Err(String::from("Invalid negative array index")),
             walker(&json, selector)
         );
     }
@@ -100,7 +88,7 @@ mod tests {
         let json_array: Value = serde_json::from_str(ARRAY_DATA).unwrap();
         let array_selector: Option<&str> = Some("-1");
         assert_eq!(
-            Some(Err(String::from("Invalid negative array index"))),
+            Err(String::from("Invalid negative array index")),
             walker(&json_array, array_selector)
         );
     }
@@ -109,12 +97,12 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("text.1");
         assert_eq!(
-            Some(Err(String::from("Node ( text ) is not an array"))),
+            Err(String::from("Node ( text ) is not an array")),
             walker(&json, selector)
         );
         let root_selector: Option<&str> = Some("1");
         assert_eq!(
-            Some(Err(String::from("Root element is not an array"))),
+            Err(String::from("Root element is not an array")),
             walker(&json, root_selector)
         );
     }
@@ -124,7 +112,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("foo");
         assert_eq!(
-            Some(Err(String::from("Node ( foo ) is not the root element"))),
+            Err(String::from("Node ( foo ) is not the root element")),
             walker(&json, selector)
         );
     }
@@ -134,9 +122,9 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("nested.d");
         assert_eq!(
-            Some(Err(String::from(
-                "Node ( d ) not found on parent ( nested )"
-            ))),
+            Err(String::from(
+                "Node ( d ) not found on parent node ( nested )"
+            )),
             walker(&json, selector)
         );
     }
@@ -145,13 +133,7 @@ mod tests {
     fn get_existing_child_node() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("nested.a");
-        assert_eq!(
-            Some(Ok(vec![
-                json["nested"].clone(),
-                json["nested"]["a"].clone()
-            ])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json["nested"]["a"].clone()), walker(&json, selector));
     }
 
     #[ignore]
@@ -160,7 +142,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("nested.");
         assert_eq!(
-            Some(Err(String::from("Unterminated selector found"))),
+            Err(String::from("Unterminated selector found")),
             walker(&json, selector)
         );
     }
@@ -170,11 +152,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let mix_selector: Option<&str> = Some("mix.0.first");
         assert_eq!(
-            Some(Ok(vec![
-                json["mix"].clone(),
-                json["mix"][0].clone(),
-                json["mix"][0]["first"].clone()
-            ])),
+            Ok(json["mix"][0]["first"].clone()),
             walker(&json, mix_selector)
         )
     }
@@ -183,30 +161,21 @@ mod tests {
     fn get_range() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let range_selector: Option<&str> = Some("range.2:5");
-        assert_eq!(
-            Some(Ok(vec![
-                json["range"].clone(),
-                json!([3, 4, 5, 6])])),
-            walker(&json, range_selector)
-        );
+        assert_eq!(Ok(json!([3, 4, 5, 6])), walker(&json, range_selector));
     }
 
     #[test]
     fn get_one_item_range() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("range.2:2");
-        assert_eq!(
-            Some(Ok(vec![json["range"].clone(), json!([3])])),
-            walker(&json, selector));
+        assert_eq!(Ok(json!([3])), walker(&json, selector));
     }
 
     #[test]
     fn get_reversed_range() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("range.5:2");
-        assert_eq!(
-            Some(Ok(vec![json["range"].clone(), json!([6, 5, 4, 3])])),
-            walker(&json, selector));
+        assert_eq!(Ok(json!([6, 5, 4, 3])), walker(&json, selector));
     }
 
     #[test]
@@ -214,13 +183,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("range.5:2.3:0");
 
-        assert_eq!(
-            Some(Ok(vec![
-                json["range"].clone(),
-                json!([6, 5, 4, 3]),
-                json!([3, 4, 5, 6])])),
-            walker(&json, selector)
-        );
+        assert_eq!(Ok(json!([3, 4, 5, 6])), walker(&json, selector));
     }
 
     #[test]
@@ -229,7 +192,21 @@ mod tests {
         let selector: Option<&str> = Some("range.6:7");
 
         assert_eq!(
-            Some(Err(String::from("Range ( 6 : 7 ) is out of bound, node ( range ) has a length of 7"))),
+            Err(String::from(
+                "Range ( 6 : 7 ) is out of bound, node ( range ) has a length \
+                 of 7"
+            )),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn get_multi_selection() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+
+        let selector: Option<&str> = Some("array,number");
+        assert_eq!(
+            Ok(json!([json["array"], json["number"]])),
             walker(&json, selector)
         );
     }

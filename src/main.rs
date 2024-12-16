@@ -52,15 +52,13 @@ fn main() {
                 }
                 // walk through the JSON content with the provided selector.
                 match walker(&valid_json, Some(selector.as_str())) {
-                    Some(items) => match items {
-                        Ok(results) => println!(
+                    Ok(items) => {
+                        println!(
                             "{}",
-                            serde_json::to_string_pretty(&results.last())
-                                .unwrap()
-                        ),
-                        Err(error) => println!("{}", error),
-                    },
-                    None => println!("has no value"),
+                            serde_json::to_string_pretty(&items).unwrap()
+                        )
+                    }
+                    Err(error) => println!("has no value"),
                 }
             }
             Err(_) => println!("Invalid JSON file!"),
@@ -69,6 +67,4 @@ fn main() {
             panic!("Couldn't read {}: {}", path.display(), error)
         }
     }
-
-    println!("Hello, world!");
 }
