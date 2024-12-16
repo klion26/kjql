@@ -2,7 +2,7 @@ use crate::types::{Selection, Selector};
 use regex::Regex;
 use serde_json::{json, Value};
 use std::string::String;
-use crate::utils::get_node_or_range;
+use crate::utils::display_node_or_range;
 
 // get the trimmed text of the match with a default of an empty string
 // if the group didn't participate in the match.
@@ -26,6 +26,7 @@ fn get_selector(capture: &regex::Captures<'_>) -> Selector {
             })
             .collect();
         if ranges.is_empty() {
+            println!("==== {}", String::from(cap));
             // Returns the initial captured value.
             Selector::Default(String::from(cap))
         } else {
@@ -51,6 +52,10 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
             .map(|capture| get_selector(&capture))
             .collect();
 
+        if selector.is_empty() {
+            return Some(Err("Unterminated selector found".to_string()))
+        }
+
         // Returns Result of values or Err early on, stopping the iteration.
         let items: Selection = selector
             .iter()
@@ -73,7 +78,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                     inner_json = json.clone();
                                     Ok(json.clone())
                                 }
-                                Err(error) => Err(error.to_string()),
+                                Err(error) => Err(error),
                             };
                         }
 
@@ -96,7 +101,7 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                                     },
                                     ")",
                                 ]
-                                .join(" "))
+                                    .join(" "))
                             }
                         } else {
                             inner_json = inner_json[s].clone();
@@ -104,13 +109,20 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Option<Selection> {
                         }
                     }
                     // range selector
-                    Selector::Range((start, end)) => range_selector(
+                    Selector::Range((start, end)) => match
+                    range_selector(
                         i,
                         &inner_json.clone(),
                         *start,
                         *end,
                         &selector,
-                    ),
+                    ) {
+                        Ok(json) => {
+                            inner_json = json.clone();
+                            Ok(json.clone())
+                        }
+                        Err(error) => Err(error),
+                    }
                 }
             })
             .collect();
@@ -144,17 +156,17 @@ pub fn array_walker(
                         ") is out of bound, root elment has a length of",
                         &array.len().to_string(),
                     ]
-                    .join(" ")
+                        .join(" ")
                 } else {
                     [
                         "Index (",
                         s,
-                        ") is out of bound, node (",
-                        &get_node_or_range(&selector[i - 1]),
-                        ") has a length of",
+                        ") is out of bound,",
+                        &display_node_or_range(&selector[i - 1], false),
+                        "has a length of",
                         &(array.len()).to_string(),
                     ]
-                    .join(" ")
+                        .join(" ")
                 }
             }
             // Trying to acces an index on a node which
@@ -164,11 +176,10 @@ pub fn array_walker(
                     ["Root element is not an array"].join(" ")
                 } else {
                     [
-                        "Node (",
-                        &get_node_or_range(&selector[i - 1]),
-                        ") is not an array",
+                        &display_node_or_range(&selector[i - 1], true),
+                        "is not an array",
                     ]
-                    .join(" ")
+                        .join(" ")
                 }
             }
         };
@@ -190,7 +201,7 @@ pub fn range_selector(
     // check the range validity
     // if this is array
     if let Some(inner_arrar) = inner_json.as_array() {
-        if inner_arrar.len() <= start || inner_arrar.len() <= end {
+        if inner_arrar.len() < start || inner_arrar.len() < (end + 1) {
             return Err(if selector.len() == 1 {
                 [
                     "Range (",
@@ -201,19 +212,19 @@ pub fn range_selector(
                     ", len:",
                     inner_arrar.len().to_string().as_str(),
                 ]
-                .join(" ")
+                    .join(" ")
             } else {
                 [
                     "Range (",
                     start.to_string().as_str(),
                     ":",
                     end.to_string().as_str(),
-                    ") is out of bound, node (",
-                    &get_node_or_range(&selector[i - 1]),
-                    ") has a length of",
+                    ") is out of bound,",
+                    &display_node_or_range(&selector[i - 1], false),
+                    "has a length of",
                     &(inner_arrar.len().to_string()),
                 ]
-                .join(" ")
+                    .join(" ")
             });
         }
 
@@ -239,11 +250,10 @@ pub fn range_selector(
             return Err(["Root element is not an array"].join(" "));
         } else {
             return Err([
-                "Node (",
-                &get_node_or_range(&selector[i - 1]),
+                &display_node_or_range(&selector[i - 1], true),
                 ") is not an array",
             ]
-            .join(" "));
+                .join(" "));
         }
     }
 }

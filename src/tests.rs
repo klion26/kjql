@@ -13,7 +13,11 @@ mod tests {
            "c": "three"
        },
        "number": 1337,
-       "text": "some text"
+       "text": "some text",
+       ".property..": "This is valid JSON!",
+       "\"": "This is valid JSON as well",
+       "mix": [{"first": 1}],
+       "range": [1, 2, 3, 4, 5, 6, 7]
        }
     "#;
 
@@ -150,12 +154,82 @@ mod tests {
         );
     }
 
+    #[ignore]
     #[test]
     fn get_unterminated_selector() {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("nested.");
         assert_eq!(
             Some(Err(String::from("Unterminated selector found"))),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn get_mix_json() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let mix_selector: Option<&str> = Some("mix.0.first");
+        assert_eq!(
+            Some(Ok(vec![
+                json["mix"].clone(),
+                json["mix"][0].clone(),
+                json["mix"][0]["first"].clone()
+            ])),
+            walker(&json, mix_selector)
+        )
+    }
+
+    #[test]
+    fn get_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let range_selector: Option<&str> = Some("range.2:5");
+        assert_eq!(
+            Some(Ok(vec![
+                json["range"].clone(),
+                json!([3, 4, 5, 6])])),
+            walker(&json, range_selector)
+        );
+    }
+
+    #[test]
+    fn get_one_item_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector: Option<&str> = Some("range.2:2");
+        assert_eq!(
+            Some(Ok(vec![json["range"].clone(), json!([3])])),
+            walker(&json, selector));
+    }
+
+    #[test]
+    fn get_reversed_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector: Option<&str> = Some("range.5:2");
+        assert_eq!(
+            Some(Ok(vec![json["range"].clone(), json!([6, 5, 4, 3])])),
+            walker(&json, selector));
+    }
+
+    #[test]
+    fn get_original_from_reversed_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector: Option<&str> = Some("range.5:2.3:0");
+
+        assert_eq!(
+            Some(Ok(vec![
+                json["range"].clone(),
+                json!([6, 5, 4, 3]),
+                json!([3, 4, 5, 6])])),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn get_out_of_bound_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector: Option<&str> = Some("range.6:7");
+
+        assert_eq!(
+            Some(Err(String::from("Range ( 6 : 7 ) is out of bound, node ( range ) has a length of 7"))),
             walker(&json, selector)
         );
     }
