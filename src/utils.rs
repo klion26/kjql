@@ -1,4 +1,3 @@
-use crate::core::range_selector;
 use crate::types::Selector;
 use std::fs::File;
 use std::io::prelude::Read;

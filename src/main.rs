@@ -35,7 +35,7 @@ fn main() {
     let selector = args.selector;
     let file = args.file;
     let path = Path::new(&file);
-    let mut file = match File::open(&path) {
+    let file = match File::open(path) {
         Err(error) => panic!("{}", error),
         Ok(file) => file,
     };
