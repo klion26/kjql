@@ -245,15 +245,13 @@ pub fn range_selector(
                     .collect();
             json!(reversed_range_selection)
         })
+    } else if selector.len() == 1 {
+        Err(["Root element is not an array"].join(" "));
     } else {
-        if selector.len() == 1 {
-            return Err(["Root element is not an array"].join(" "));
-        } else {
-            return Err([
-                &display_node_or_range(&selector[i - 1], true),
-                ") is not an array",
-            ]
-                .join(" "));
-        }
+        Err([
+            &display_node_or_range(&selector[i - 1], true),
+            ") is not an array",
+        ]
+            .join(" "))
     }
 }
