@@ -7,3 +7,5 @@ pub enum Selector {
     Default(String),
     Range((usize, usize)),
 }
+
+pub type Selectors = [Selector];
