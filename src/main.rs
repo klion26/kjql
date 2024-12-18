@@ -1,6 +1,12 @@
 #![feature(future_join)]
 
+mod apply_filter;
+mod array_walker;
 mod core;
+mod get_selection;
+mod get_selector;
+mod group_walker;
+mod range_selector;
 mod tests;
 mod types;
 mod utils;

@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::core::walker;
     use serde_json::{json, Value};
+
     const ARRAY_DATA: &str = r#"[1, 2, 3]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3],
@@ -23,7 +23,29 @@ mod tests {
             { "color": "red" },
             { "color": "green" },
             { "color": "blue" }
-       ]
+       ],
+       "nested-filter": [
+        {
+            "laptop": {
+            "brand": "Apple",
+            "options": [
+                "a",
+                "b",
+                "c"
+            ]
+        }
+        },
+        {
+            "laptop": {
+                "brand": "Asus",
+                "options": [
+                     "d",
+                     "e",
+                    "f"
+            ]
+            }
+        }
+  ]
        }
     "#;
 
@@ -98,6 +120,7 @@ mod tests {
             walker(&json_array, array_selector)
         );
     }
+
     #[test]
     fn get_index_in_non_array() {
         let json: Value = serde_json::from_str(DATA).unwrap();
@@ -278,5 +301,51 @@ mod tests {
             Err(String::from("Node ( colors ) is not the root element")),
             walker(&json, selector)
         )
+    }
+
+    #[test]
+    fn get_only_one_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("|color|color");
+        assert_eq!(
+            Err(String::from("Node ( |color ) is not the root element")),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_filter_with_no_selection() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("|color");
+        assert_eq!(
+            Err(String::from("Empty selection")),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_nested_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("nested-filter|laptop.brand");
+        assert_eq!(Ok(json!(["Apple", "Asus"])), walker(&json, selector));
+    }
+
+    #[test]
+    fn get_nested_filter_with_index() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+
+        let selector = Some("nested-filter|laptop.options.0");
+        assert_eq!(Ok(json!(["a", "d"])), walker(&json, selector));
+    }
+
+    #[test]
+    fn get_nested_filter_with_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+
+        let selector = Some("nested-filter|laptop.options.1:2");
+        assert_eq!(
+            Ok(json!([["b", "c"], ["e", "f"]])),
+            walker(&json, selector)
+        );
     }
 }
