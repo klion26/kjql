@@ -53,6 +53,13 @@ pub fn apply_filter(
                     .collect::<Vec<Value>>())]),
             }
         }
-        None => Ok(vec![json.clone()]),
+        // Not an array, return the JSON content if there's no filter or throw
+        // an error.
+        None => match filter_selectors {
+            Some(_) => {
+                Err(String::from("A filter can only be applied to an array"))
+            }
+            None => Ok(vec![json.clone()]),
+        },
     }
 }
