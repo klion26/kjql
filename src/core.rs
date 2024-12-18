@@ -33,7 +33,8 @@ fn get_selector(capture: &str) -> Selector {
         lazy_static! {
             static ref RANGE_REGEX: Regex = Regex::new(r"(\d+):(\d+)").unwrap();
         }
-        let ranges: Vec<(&str, &str)> = get_range_for_regex(capture, &RANGE_REGEX);
+        let ranges: Vec<(&str, &str)> =
+            get_range_for_regex(capture, &RANGE_REGEX);
         if ranges.is_empty() {
             println!("==== {}", String::from(capture));
             // Returns the initial captured value.
@@ -42,8 +43,8 @@ fn get_selector(capture: &str) -> Selector {
             // Returns the range as a tuple of the from (start, end).
             let (start, end) = ranges[0];
             Selector::Range((
-                usize::from_str_radix(start, 10).unwrap(),
-                usize::from_str_radix(end, 10).unwrap(),
+                start.parse::<usize>().unwrap(),
+                end.parse::<usize>().unwrap(),
             ))
         }
     }
@@ -150,15 +151,14 @@ fn group_walker(
         .collect();
 
     // perform the same operation on the filter.
-    let filter_selectors = match filter {
-        None => None,
-        Some(filter)   => Some(
-            SUB_GROUP_REGEX.captures_iter(filter)
-                .map(|capture| {
-                    get_selector(capture.get(0).map_or("", |m| m.as_str()))
-                }).collect::<Vec<Selector>>()
-            )
-    };
+    let filter_selectors = filter.map(|filter| {
+        SUB_GROUP_REGEX
+            .captures_iter(filter)
+            .map(|capture| {
+                get_selector(capture.get(0).map_or("", |m| m.as_str()))
+            })
+            .collect::<Vec<Selector>>()
+    });
     println!("filter_selector:{:?}", filter_selectors);
     // Returns a Result of values or an Err early on, stopping the iteration
     // as soon as the latter is encountered.
@@ -170,14 +170,13 @@ fn group_walker(
     match items {
         Ok(items) => {
             if items.is_empty() {
-                println!("==== Empty items {:?}", apply_filter(&json, &filter_selectors));
                 apply_filter(&json, &filter_selectors)
             } else {
-                Ok(items
+                items
                     .iter()
-                    .map(|item| apply_filter(&item, &filter_selectors).unwrap())
-                    .flatten()
-                    .collect::<Vec<Value>>())
+                    .map(|item| apply_filter(&item, &filter_selectors))
+                    .last()
+                    .unwrap()
             }
         }
         Err(error) => Err(error),
@@ -186,7 +185,10 @@ fn group_walker(
 
 // apply the filter selectors to a JSON value and
 // returns a selection.
-fn apply_filter(json: &Value, filter_selectors: &Option<Vec<Selector>>) -> Selection {
+fn apply_filter(
+    json: &Value,
+    filter_selectors: &Option<Vec<Selector>>,
+) -> Selection {
     // Apply the filter iff the provided JSON is an array.
     match json.as_array() {
         Some(array) => {
@@ -195,25 +197,26 @@ fn apply_filter(json: &Value, filter_selectors: &Option<Vec<Selector>>) -> Selec
                 .cloned()
                 .map(|partial_json| -> Selection {
                     match filter_selectors {
-                        Some(selectors) => get_selections(&selectors, &partial_json),
-                        None => Ok(vec![partial_json])
+                        Some(selectors) => {
+                            get_selections(&selectors, &partial_json)
+                        }
+                        None => Ok(vec![partial_json]),
                     }
-                }).collect();
+                })
+                .collect();
 
             // try to find the first error.
             match selections
                 .iter()
-                .find_map(|selection| selection.clone().err()) {
+                .find_map(|selection| selection.clone().err())
+            {
                 // throw it back.
                 Some(error) => Err(error),
                 // no error in this case, we can safely unwrap.
-                None => Ok(vec![json!(
-                    selections
+                None => Ok(vec![json!(selections
                     .iter()
-                    .map(|selection| selection.clone().unwrap())
-                    .flatten()
-                    .collect::<Vec<Value>>()
-                )]),
+                    .flat_map(|selection| selection.clone().unwrap())
+                    .collect::<Vec<Value>>())]),
             }
         }
         None => Ok(vec![json.clone()]),

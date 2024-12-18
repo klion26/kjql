@@ -7,7 +7,6 @@ mod utils;
 
 use crate::core::walker;
 extern crate clap;
-#[macro_use]
 extern crate serde_json;
 
 use clap::Parser;
@@ -58,7 +57,7 @@ fn main() {
                             serde_json::to_string_pretty(&items).unwrap()
                         )
                     }
-                    Err(error) => println!("has no value"),
+                    Err(error) => println!("has no value: {:?}", error),
                 }
             }
             Err(_) => println!("Invalid JSON file!"),

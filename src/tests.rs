@@ -2,7 +2,7 @@
 mod tests {
     use super::*;
     use crate::core::walker;
-    use serde_json::Value;
+    use serde_json::{json, Value};
     const ARRAY_DATA: &str = r#"[1, 2, 3]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3],
@@ -238,10 +238,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
 
         let selector = Some("filter|color");
-        assert_eq!(
-            Ok(json!(["red", "green", "blue"])),
-            walker(&json, selector)
-        )
+        assert_eq!(Ok(json!(["red", "green", "blue"])), walker(&json, selector))
     }
 
     #[test]
@@ -259,6 +256,26 @@ mod tests {
         let selector = Some("filter, filter.1:2|color");
         assert_eq!(
             Ok(json!([["red", "green", "blue"], ["green", "blue"]])),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_wrong_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("filter|colors");
+        assert_eq!(
+            Err(String::from("Node ( colors ) is not the root element")),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_wrong_filter_with_range() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("filter.1:2|colors");
+        assert_eq!(
+            Err(String::from("Node ( colors ) is not the root element")),
             walker(&json, selector)
         )
     }

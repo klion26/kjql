@@ -4,4 +4,3 @@ imports_indent = "Block"
 max_width = 80
 use_try_shorthand = true
 wrap_comments = true
-write_mode = "Replace"
