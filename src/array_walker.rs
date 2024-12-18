@@ -43,7 +43,7 @@ pub fn array_walker(
             // Trying to acces an index on a node which
             // is not an arrya.
             None => {
-                if selector.len() == 1 {
+                if selector.len() == 1 || map_index == 0 {
                     ["Root element is not an array"].join(" ")
                 } else {
                     [

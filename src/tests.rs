@@ -3,6 +3,7 @@ mod tests {
     use crate::core::walker;
     use serde_json::{json, Value};
 
+    const SINGLE_VALUE_DATA: &str = r#"337"#;
     const ARRAY_DATA: &str = r#"[1, 2, 3]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3],
@@ -134,6 +135,11 @@ mod tests {
             Err(String::from("Root element is not an array")),
             walker(&json, root_selector)
         );
+        let root_selector_nested = Some("0.1");
+        assert_eq!(
+            Err(String::from("Root element is not an array")),
+            walker(&json, root_selector_nested)
+        )
     }
 
     #[test]
@@ -276,9 +282,9 @@ mod tests {
     fn get_filter_with_multi_selection() {
         let json: Value = serde_json::from_str(DATA).unwrap();
 
-        let selector = Some("filter, filter.1:2|color");
+        let selector = Some("filter.1:2|color,filter.2:1|color");
         assert_eq!(
-            Ok(json!([["red", "green", "blue"], ["green", "blue"]])),
+            Ok(json!([["green", "blue"], ["blue", "green"]])),
             walker(&json, selector)
         )
     }
@@ -318,7 +324,7 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector = Some("|color");
         assert_eq!(
-            Err(String::from("Empty selection")),
+            Err(String::from("Empty group")),
             walker(&json, selector)
         )
     }
@@ -356,6 +362,27 @@ mod tests {
         let selector = Some("nested|some");
         assert_eq!(
             Err(String::from("A filter can only be applied to an array")),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_range_on_non_array_root() {
+        let json: Value = serde_json::from_str(SINGLE_VALUE_DATA).unwrap();
+
+        let selector = Some("2:0");
+        assert_eq!(
+            Err(String::from("Root element is not an array")),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_range_on_non_array_node() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some("nested.0.1");
+        assert_eq!(
+            Err(String::from("Node ( nested ) is not an array")),
             walker(&json, selector)
         )
     }
