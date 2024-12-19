@@ -55,11 +55,11 @@ pub fn group_walker(capture: &regex::Captures<'_>, json: &Value) -> Selection {
             .collect::<Vec<Selector>>()
     });
 
-    println!("filter_selector:{:?}", filter_selectors);
+    eprintln!("filter_selector:{:?}", filter_selectors);
     // Returns a Result of values or an Err early on, stopping the iteration
     // as soon as the latter is encountered.
     let items: Selection = get_selections(&selectors, &json);
-    println!("items:{:?}", items);
+    eprintln!("items:{:?}", items);
 
     // check for empty selection, in this case we assume that the user expects
     // to get back the complete raw JSON back for this group.

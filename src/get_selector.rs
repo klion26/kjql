@@ -20,7 +20,7 @@ pub fn get_selector(capture: &str) -> Selector {
         let ranges: Vec<(&str, &str)> =
             get_range_for_regex(capture, &RANGE_REGEX);
         if ranges.is_empty() {
-            println!("==== {}", String::from(capture));
+            eprintln!("==== {}", String::from(capture));
             // Returns the initial captured value.
             Selector::Default(String::from(capture))
         } else {

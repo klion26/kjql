@@ -11,7 +11,7 @@ pub fn apply_filter(
     // Apply the filter iff the provided JSON is an array.
     match json.as_array() {
         Some(array) => {
-            println!(
+            eprintln!(
                 "### debug ### apply filter {:?}, json:{:?}",
                 filter_selectors, json
             );
@@ -21,7 +21,7 @@ pub fn apply_filter(
                 .map(|partial_json| -> Selection {
                     match filter_selectors {
                         Some(selectors) => {
-                            println!(
+                            eprintln!(
                                 "### debug ### get selection for [{:?}], \
                                  [{:?}]",
                                 filter_selectors, partial_json
@@ -40,8 +40,7 @@ pub fn apply_filter(
             {
                 // throw it back.
                 Some(error) => Err(error),
-                // no error in this case, we can safely unwrap.
-                // TODO: Need to figure out this logci here
+                // no error in this case, we can safely unwrap.e
                 None => Ok(vec![json!(selections
                     .iter()
                     .map(|selection| selection

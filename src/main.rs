@@ -31,6 +31,8 @@ pub struct CommandArgs {
     selector: String,
     #[arg(short, long, default_value = "false")]
     pretty: bool,
+    #[arg(short, long, help = "Inlines JSON output")]
+    inline: bool,
 }
 
 fn main() {
@@ -60,7 +62,12 @@ fn main() {
                     Ok(items) => {
                         println!(
                             "{}",
-                            serde_json::to_string_pretty(&items).unwrap()
+                            // Inline or pretty output
+                            if args.inline {
+                                serde_json::to_string(&items).unwrap()
+                            } else {
+                                serde_json::to_string_pretty(&items).unwrap()
+                            }
                         )
                     }
                     Err(error) => println!("has no value: {:?}", error),

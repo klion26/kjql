@@ -55,7 +55,7 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
                         }
                     } else {
                         inner_json = inner_json[raw_selector].clone();
-                        println!(
+                        eprintln!(
                             "### debug get_selections:map:res ###  {:?}",
                             inner_json
                         );

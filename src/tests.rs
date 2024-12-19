@@ -82,11 +82,11 @@ mod tests {
 
     #[test]
     fn get_single_null_value() {
-        let json_single_value: Value = serde_json::from_str(SINGLE_NULL_VALUE_DATA).unwrap();
+        let json_single_value: Value =
+            serde_json::from_str(SINGLE_NULL_VALUE_DATA).unwrap();
 
         let selector = Some(".");
-        assert_eq!(
-            Ok(Value::Null), walker(&json_single_value, selector));
+        assert_eq!(Ok(Value::Null), walker(&json_single_value, selector));
     }
 
     #[test]
