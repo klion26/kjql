@@ -4,6 +4,7 @@ mod tests {
     use serde_json::{json, Value};
 
     const SINGLE_VALUE_DATA: &str = r#"337"#;
+    const SINGLE_NULL_VALUE_DATA: &str = r#"null"#;
     const ARRAY_DATA: &str = r#"[1, 2, 3, null]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3, null],
@@ -77,6 +78,15 @@ mod tests {
         let json: Value = serde_json::from_str(DATA).unwrap();
         let selector: Option<&str> = Some("array");
         assert_eq!(Ok(json["array"].clone()), walker(&json, selector));
+    }
+
+    #[test]
+    fn get_single_null_value() {
+        let json_single_value: Value = serde_json::from_str(SINGLE_NULL_VALUE_DATA).unwrap();
+
+        let selector = Some(".");
+        assert_eq!(
+            Ok(Value::Null), walker(&json_single_value, selector));
     }
 
     #[test]

@@ -3,6 +3,12 @@
 > A JSON Query Language CLI tool
 > the repo is a manually copy from yamafaktory/jql used to learn rust
 
+The core philosophy of kjql:
+- Keep its features as simple as possible
+- Avoid redunduncy
+- Provide meaningful error messages
+- Eat JSON as input, process, output JSON back
+
 ##  Installation 
 
 ```shell
