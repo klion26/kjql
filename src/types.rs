@@ -8,4 +8,12 @@ pub enum Selector {
     Range((usize, usize)),
 }
 
+#[derive(Debug)]
+pub enum MaybeArray {
+    Array(Vec<Value>),
+    NonArray(Vec<Value>),
+}
+
 pub type Selectors = [Selector];
+
+pub type ExtendedSelection = Result<MaybeArray, String>;

@@ -29,10 +29,15 @@ pub fn walker(json: &Value, selector: Option<&str>) -> Result<Value, String> {
         // curernt gorup and return a Result of values or an Err early on.
         let groups: Result<Vec<Value>, String> = GROUP_REGEX
             .captures_iter(selector)
-            .map(|capture| group_walker(&capture, json))
+            .map(|capture| {
+                group_walker(
+                    capture.get(0).map_or("", |m| m.as_str().trim()),
+                    json,
+                )
+            })
             .map(|s| -> Result<Value, String> {
                 match s {
-                    Ok(item) => Ok(item.last().unwrap().clone()),
+                    Ok(item) => Ok(json!(item.clone())),
                     Err(error) => Err(error.clone()),
                 }
             })

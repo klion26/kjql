@@ -1,5 +1,5 @@
 use crate::get_selection::get_selections;
-use crate::types::{Selection, Selector};
+use crate::types::{ExtendedSelection, MaybeArray, Selection, Selector};
 use serde_json::{json, Value};
 
 // apply the filter selectors to a JSON value and
@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 pub fn apply_filter(
     json: &Value,
     filter_selectors: &Option<Vec<Selector>>,
-) -> Selection {
+) -> ExtendedSelection {
     // Apply the filter iff the provided JSON is an array.
     match json.as_array() {
         Some(array) => {
@@ -41,15 +41,22 @@ pub fn apply_filter(
                 // throw it back.
                 Some(error) => Err(error),
                 // no error in this case, we can safely unwrap.e
-                None => Ok(vec![json!(selections
-                    .iter()
-                    .map(|selection| selection
-                        .clone()
-                        .unwrap()
-                        .last()
-                        .unwrap()
-                        .clone())
-                    .collect::<Vec<Value>>())]),
+                None => Ok(MaybeArray::Array(selections.iter().fold(
+                    Vec::new(),
+                    |mut acc: Vec<Value>, selection| {
+                        println!(
+                            "======={:?}",
+                            selection.clone().unwrap().last().unwrap().clone()
+                        );
+                        acc.push(json!(selection
+                            .clone()
+                            .unwrap()
+                            .last()
+                            .unwrap()
+                            .clone()));
+                        acc
+                    },
+                ))),
             }
         }
         // Not an array, return the JSON content if there's no filter or throw
@@ -58,7 +65,7 @@ pub fn apply_filter(
             Some(_) => {
                 Err(String::from("A filter can only be applied to an array"))
             }
-            None => Ok(vec![json.clone()]),
+            None => Ok(MaybeArray::NonArray(vec![json.clone()])),
         },
     }
 }
