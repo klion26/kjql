@@ -24,7 +24,7 @@ pub fn range_selector(
                         ", len:",
                         json_array.len().to_string().as_str(),
                     ]
-                        .join(" ")
+                    .join(" ")
                 } else {
                     [
                         "Range (",
@@ -32,11 +32,14 @@ pub fn range_selector(
                         ":",
                         end.to_string().as_str(),
                         ") is out of bound,",
-                        &display_node_or_range(&selectors[map_index - 1], false),
+                        &display_node_or_range(
+                            &selectors[map_index - 1],
+                            false,
+                        ),
                         "has a length of",
                         &(json_array.len().to_string()),
                     ]
-                        .join(" ")
+                    .join(" ")
                 });
             }
 
@@ -57,6 +60,6 @@ pub fn range_selector(
                 json!(reversed_range_selection)
             })
         }
-        None => Err(String::from(["Root element is not an array"].join(" ")))
+        None => Err(["Root element is not an array"].join(" ")),
     }
 }

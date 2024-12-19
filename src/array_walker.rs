@@ -13,8 +13,8 @@ pub fn array_walker(
     if array_index.is_negative() {
         return Err(String::from("Invalid negative array index"));
     }
-    // found a null value in the array
-    if inner_json[array_index as usize] == Value::Null {
+    // No JSON value has been found (array).
+    if inner_json.get(array_index as usize).is_none() {
         let error_message = match inner_json.as_array() {
             // Trying to access an out of bound index on a
             // node
