@@ -1,5 +1,5 @@
 use crate::apply_filter::apply_filter;
-use crate::flatten_array::flatten_array;
+use crate::flatten_json_array::flatten_json_array;
 use crate::get_selection::get_selections;
 use crate::get_selector::get_selector;
 use crate::types::{MaybeArray, Selection, Selector};
@@ -84,7 +84,7 @@ pub fn group_walker(capture: &str, json: &Value) -> Result<Value, String> {
             match apply_filter(&output_json, &filter_selectors) {
                 Ok(filtered) => match filtered {
                     MaybeArray::Array(array) => Ok(if is_spreading {
-                        json!(flatten_array(&array))
+                        json!(flatten_json_array(&array))
                     } else {
                         json!(array)
                     }),

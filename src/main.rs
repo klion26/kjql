@@ -3,7 +3,7 @@
 mod apply_filter;
 mod array_walker;
 mod core;
-mod flatten_array;
+mod flatten_json_array;
 mod get_selection;
 mod get_selector;
 mod group_walker;

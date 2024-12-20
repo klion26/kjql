@@ -1,11 +1,14 @@
 #[cfg(test)]
 mod tests {
     use crate::core::walker;
+    use crate::flatten_json_array::flatten_json_array;
     use serde_json::{json, Value};
 
     const SINGLE_VALUE_DATA: &str = r#"337"#;
     const SINGLE_NULL_VALUE_DATA: &str = r#"null"#;
     const ARRAY_DATA: &str = r#"[1, 2, 3, null]"#;
+    const FLATEEN_DATA: &str =
+        r#"[[[[[[[[[[[[[[1]]]]]]]]]]]]], [[[[[2]]]], 3], null]"#;
     const DATA: &str = r#"{
        "array": [1, 2, 3, null],
        "nested": {
@@ -420,5 +423,14 @@ mod tests {
             Err(String::from("Node ( nested ) is not an array")),
             walker(&json, selector)
         )
+    }
+
+    #[test]
+    fn get_flatten_value() {
+        let json: Value = serde_json::from_str(FLATEEN_DATA).unwrap();
+        assert_eq!(
+            vec![json!([1, 2, 3, null])],
+            flatten_json_array(&vec![json])
+        );
     }
 }
