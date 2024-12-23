@@ -1,74 +1,23 @@
 use crate::apply_filter::apply_filter;
 use crate::flatten_json_array::flatten_json_array;
 use crate::get_selection::get_selections;
-use crate::get_selector::get_selector;
-use crate::types::{MaybeArray, Selection, Selector};
-use lazy_static::lazy_static;
-use regex::Regex;
+
+use crate::types::{Group, MaybeArray};
 use serde_json::{json, Value};
 
 // walks through a group
-pub fn group_walker(capture: &str, json: &Value) -> Result<Value, String> {
-    lazy_static! {
-        static ref FILTER_REGEX: Regex =
-            Regex::new(r"^(\.{2})*(.*)\|([^|]+)$").unwrap();
-        static ref SUB_GROUP_REGEX: Regex =
-            Regex::new(r#"("[^"]+")|([^.]+)"#).unwrap();
-    }
-
-    let group = capture.trim();
-    let parsed_group: (Option<()>, &str, Option<&str>) = FILTER_REGEX
-        .captures_iter(group)
-        .map(|capture| {
-            println!(
-                "filter === [{:?}],[{:?}], [{:?}]",
-                capture.get(1),
-                capture.get(2),
-                capture.get(3)
-            );
-            (
-                // Spread capture.
-                capture.get(1).map(|_| ()),
-                // Group capture.
-                capture.get(2).map_or("", |m| m.as_str()),
-                // filter capture.
-                capture.get(3).map(|m| m.as_str()),
-            )
-        })
-        .next()
-        .unwrap_or((None, group, None));
-
+pub fn group_walker(
+    (spread, root, selectors, filters): &Group,
+    json: &Value,
+) -> Result<Value, String> {
     // empty group, return early
-    if parsed_group.1.is_empty() {
+    if selectors.is_empty() && root.is_none() {
         return Err(String::from("Empty group"));
     }
 
-    // capture sub-groups of doulbe quoted selectors and simple ones surrounded
-    // by dots.
-    let selectors: Vec<Selector> = SUB_GROUP_REGEX
-        .captures_iter(parsed_group.1)
-        .map(|capture| get_selector(capture.get(0).map_or("", |m| m.as_str())))
-        .collect();
-
-    // perform the same operation on the filter.
-    let filter_selectors = parsed_group.2.map(|filter| {
-        SUB_GROUP_REGEX
-            .captures_iter(filter)
-            .map(|capture| {
-                get_selector(capture.get(0).map_or("", |m| m.as_str()))
-            })
-            .collect::<Vec<Selector>>()
-    });
-
-    eprintln!("filter_selector:{:?}", filter_selectors);
-    // Returns a Result of values or an Err early on, stopping the iteration
-    // as soon as the latter is encountered.
-    let items: Selection = get_selections(&selectors, &json);
-    eprintln!("items:{:?}", items);
-
     // check for empty selection, in this case we assume that the user expects
     // to get back the complete raw JSON back for this group.
-    match items {
+    match get_selections(&selectors, &json) {
         Ok(ref items) => {
             // check for an empty selection, in this case we assume that the
             // user expects to get back the complete raw JSON for
@@ -79,12 +28,16 @@ pub fn group_walker(capture: &str, json: &Value) -> Result<Value, String> {
                 json!(items.last().unwrap())
             };
 
-            let is_spreading = parsed_group.0.is_some();
+            let is_spreading = spread.is_some();
 
-            match apply_filter(&output_json, &filter_selectors) {
+            println!(
+                "=In group_walker=[{:?}] [{:?}] [{:?}]",
+                is_spreading, output_json, filters
+            );
+            match apply_filter(&output_json, &filters) {
                 Ok(filtered) => match filtered {
                     MaybeArray::Array(array) => Ok(if is_spreading {
-                        json!(flatten_json_array(&array))
+                        json!(flatten_json_array(&json!(array)))
                     } else {
                         json!(array)
                     }),
@@ -93,9 +46,8 @@ pub fn group_walker(capture: &str, json: &Value) -> Result<Value, String> {
                             Err(String::from("Only array can be flattened."))
                         } else {
                             // we know that we are holding a single value
-                            // wrapped
-                            // inside a MaybeArray::NoArray enum.
-                            // we nned to pick the first item of the vector.
+                            // wrapped inside a MaybeArray::NoArray enum.
+                            // we need to pick the first item of the vector.
                             Ok(json!(single_value[0]))
                         }
                     }

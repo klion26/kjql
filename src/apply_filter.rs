@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 // returns a selection.
 pub fn apply_filter(
     json: &Value,
-    filter_selectors: &Option<Vec<Selector>>,
+    filter_selectors: &[Selector],
 ) -> ExtendedSelection {
     // Apply the filter iff the provided JSON is an array.
     match json.as_array() {
@@ -19,16 +19,14 @@ pub fn apply_filter(
                 .iter()
                 .cloned()
                 .map(|partial_json| -> Selection {
-                    match filter_selectors {
-                        Some(selectors) => {
-                            eprintln!(
-                                "### debug ### get selection for [{:?}], \
-                                 [{:?}]",
-                                filter_selectors, partial_json
-                            );
-                            get_selections(&selectors, &partial_json)
-                        }
-                        None => Ok(vec![partial_json]),
+                    if filter_selectors.is_empty() {
+                        Ok(vec![partial_json])
+                    } else {
+                        eprintln!(
+                            "### debug ### get selection for [{:?}], [{:?}]",
+                            filter_selectors, partial_json
+                        );
+                        get_selections(&filter_selectors, &partial_json)
                     }
                 })
                 .collect();
@@ -57,11 +55,12 @@ pub fn apply_filter(
         }
         // Not an array, return the JSON content if there's no filter or throw
         // an error.
-        None => match filter_selectors {
-            Some(_) => {
+        None => {
+            if filter_selectors.is_empty() {
+                Ok(MaybeArray::NonArray(vec![json.clone()]))
+            } else {
                 Err(String::from("A filter can only be applied to an array"))
             }
-            None => Ok(MaybeArray::NonArray(vec![json.clone()])),
-        },
+        }
     }
 }

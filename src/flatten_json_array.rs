@@ -2,40 +2,27 @@ use rayon::prelude::*;
 use serde_json::json;
 use serde_json::Value;
 
-pub fn flatten_json_array(array: &[Value]) -> Vec<Value> {
-    fn deepen(value: Value) -> Value {
-        let t: Vec<Value> = value
-            .as_array()
-            .unwrap()
-            .par_iter()
-            .fold(Vec::new, |mut acc: Vec<Value>, inner_value: &Value| {
-                if inner_value.is_array() {
-                    let deep = deepen(inner_value.clone());
-                    if deep.is_array() {
-                        acc.append(&mut deep.as_array().unwrap().clone());
-                    } else {
-                        acc.push(inner_value.clone())
-                    }
-                    acc
+pub fn flatten_json_array(value: &Value) -> Value {
+    json!(value
+        .as_array()
+        .unwrap()
+        .par_iter()
+        .fold_with(Vec::new(), |mut acc: Vec<Value>, inner_value: &Value| {
+            if inner_value.is_array() {
+                let recursive_value = flatten_json_array(inner_value);
+                if recursive_value.is_array() {
+                    acc.append(
+                        &mut recursive_value.as_array().unwrap().clone(),
+                    );
                 } else {
                     acc.push(inner_value.clone());
-                    acc
                 }
-            })
-            .flatten()
-            .collect();
-        json!(t)
-    }
-    array
-        .iter()
-        .map(|value| {
-            if value.is_array() {
-                println!("{:?}", deepen(value.clone()));
-                deepen(value.clone())
+                acc
             } else {
-                println!("nope");
-                value.clone()
+                acc.push(inner_value.clone());
+                acc
             }
         })
-        .collect::<Vec<Value>>()
+        .flatten()
+        .collect::<Vec<Value>>())
 }

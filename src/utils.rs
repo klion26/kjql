@@ -1,26 +1,31 @@
 use crate::types::Selector;
-use std::fs::File;
-use std::io::prelude::Read;
-use std::io::BufReader;
-use toml::Value;
 
 // convert a range to a readable string.
-fn display_range_selector(
+pub fn display_range_selector(
     (start, end): (usize, usize),
     capitalized: bool,
 ) -> String {
     [
-        if capitalized { "Range (" } else { "range (" },
+        if capitalized { "Range [" } else { "range [" },
         start.to_string().as_str(),
         ":",
         end.to_string().as_str(),
-        ")",
+        "]",
     ]
-    .join(" ")
+    .join("")
 }
 // convert a range to a readable string.
-fn display_default_selector(value: &str, capitalized: bool) -> String {
-    [if capitalized { "Node (" } else { "node (" }, value, ")"].join(" ")
+pub fn display_default_selector(value: &str, capitalized: bool) -> String {
+    [
+        if capitalized {
+            r#"Node ""#
+        } else {
+            r#"node ""#
+        },
+        value,
+        r#"""#,
+    ]
+    .join("")
 }
 
 // return the node or the range of Selector as a string.
@@ -30,5 +35,15 @@ pub fn display_node_or_range(selector: &Selector, capitalized: bool) -> String {
             display_default_selector(value, capitalized)
         }
         Selector::Range(range) => display_range_selector(*range, capitalized),
+        Selector::Index(index) => display_index_selector(*index, capitalized),
     }
+}
+
+pub fn display_index_selector(index: usize, capitalized: bool) -> String {
+    [
+        if capitalized { "Index [" } else { "index [" },
+        index.to_string().as_str(),
+        "]",
+    ]
+    .join("")
 }

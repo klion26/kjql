@@ -5,8 +5,8 @@ mod array_walker;
 mod core;
 mod flatten_json_array;
 mod get_selection;
-mod get_selector;
 mod group_walker;
+mod parser;
 mod range_selector;
 mod tests;
 mod types;
@@ -14,7 +14,10 @@ mod utils;
 
 use crate::core::walker;
 extern crate clap;
+extern crate pest;
 extern crate serde_json;
+#[macro_use]
+extern crate pest_derive;
 
 use clap::Parser;
 use std::fs::File;

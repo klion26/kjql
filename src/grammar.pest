@@ -1,0 +1,35 @@
+char = {
+    !("\"" | "\\" ) ~ ANY
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+quote = { "\""}
+
+default = { quote ~ char* ~ quote }
+
+range = { "[" ~ ASCII_DIGIT+ ~ ":" ~ ASCII_DIGIT+ ~ "]"}
+
+index = { "[" ~ ASCII_DIGIT+ ~ "]"}
+
+selector = _{ range | index | default }
+
+pipe = _{ "|" }
+
+filterDefault = { default }
+filterRange = { range }
+filterIndex =  { index }
+
+filter = _{ filterRange | filterIndex | filterDefault }
+
+filters = _ { pipe ~ filter ~ ("."? ~ filter)* }
+
+spread = { ".." }
+
+root = { "." }
+
+selection = { (spread? ~ root? ~ (selector ~ ("."? ~ selector)*)?)? ~ filters* }
+
+garbage = { ANY+ }
+
+groups = _{ selection ~ ("," ~ selection)* }
