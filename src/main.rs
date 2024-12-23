@@ -21,7 +21,8 @@ extern crate pest_derive;
 
 use clap::Parser;
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io;
+use std::io::{BufRead, BufReader, Read};
 use std::string::String;
 
 use colored_json::ColoredFormatter;
@@ -90,9 +91,10 @@ fn main() {
             }
         }
         None => {
-            let mut buffer = String::new();
-            match std::io::stdin().read_line(&mut buffer) {
-                Ok(_) => output(&buffer, args.inline, selector),
+            let stdin: Result<String, std::io::Error> =
+                io::stdin().lock().lines().collect();
+            match stdin {
+                Ok(json) => output(&json, args.inline, selector),
                 Err(error) => eprintln!("error: {}", error),
             }
         }

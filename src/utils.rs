@@ -1,5 +1,3 @@
-use crate::types::Selector;
-
 // convert an array selector to a readable string
 pub fn display_array_selector(capitalized: bool) -> String {
     String::from(if capitalized { "Array" } else { "array" })
