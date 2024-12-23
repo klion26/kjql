@@ -10,7 +10,7 @@ default = { quote ~ char* ~ quote }
 
 range = { "[" ~ ASCII_DIGIT+ ~ ":" ~ ASCII_DIGIT+ ~ "]"}
 
-index = { "[" ~ ASCII_DIGIT+ ~ "]"}
+index = { "[" ~ (ASCII_DIGIT+)? ~ "]"}
 
 selector = _{ range | index | default }
 
@@ -29,7 +29,5 @@ spread = { ".." }
 root = { "." }
 
 selection = { (spread? ~ root? ~ (selector ~ ("."? ~ selector)*)?)? ~ filters* }
-
-garbage = { ANY+ }
 
 groups = _{ selection ~ ("," ~ selection)* }

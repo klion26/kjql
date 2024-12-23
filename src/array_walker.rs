@@ -1,5 +1,4 @@
-use crate::types::Selector;
-use crate::utils::display_node_or_range;
+use crate::types::{Display, Selector};
 use serde_json::Value;
 
 // walks through a JSON array
@@ -30,7 +29,7 @@ pub fn array_walker(
                         "Index [",
                         array_index.to_string().as_str(),
                         "] is out of bound, ",
-                        &display_node_or_range(&selector[map_index - 1], false),
+                        &selector[map_index - 1].as_str(false),
                         " has a length of ",
                         &array.len().to_string(),
                     ]
@@ -43,11 +42,8 @@ pub fn array_walker(
                 if selector.len() == 1 || map_index == 0 {
                     String::from("Root element is not an array")
                 } else {
-                    [
-                        &display_node_or_range(&selector[map_index - 1], true),
-                        " is not an array",
-                    ]
-                    .join("")
+                    [&selector[map_index - 1].as_str(true), " is not an array"]
+                        .join("")
                 }
             }
         };

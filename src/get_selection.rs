@@ -1,7 +1,6 @@
 use crate::array_walker::array_walker;
 use crate::range_selector::range_selector;
-use crate::types::{Selection, Selector, Selectors};
-use crate::utils::display_node_or_range;
+use crate::types::{Display, Selection, Selector, Selectors};
 use serde_json::Value;
 
 // returns a selection based on selectors and some JSON content.
@@ -30,10 +29,7 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
                                 "Node \"",
                                 raw_selector,
                                 "\" not found on parent ",
-                                &display_node_or_range(
-                                    &selectors[map_index - 1],
-                                    false,
-                                ),
+                                &selectors[map_index - 1].as_str(false),
                             ]
                             .join(""))
                         }
@@ -53,7 +49,27 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
                     map_index,
                     &inner_json.clone(),
                     *start,
-                    *end,
+                    Some(*end),
+                    &selectors,
+                    if map_index == 0 {
+                        None
+                    } else {
+                        Some(&selectors[map_index - 1])
+                    },
+                ) {
+                    Ok(json) => {
+                        inner_json = json.clone();
+                        Ok(json.clone())
+                    }
+                    Err(error) => Err(error),
+                },
+
+                // Array selector.
+                Selector::Array => match range_selector(
+                    map_index,
+                    &inner_json.clone(),
+                    0,
+                    None,
                     &selectors,
                     if map_index == 0 {
                         None
