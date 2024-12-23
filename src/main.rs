@@ -24,6 +24,8 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::string::String;
 
+use colored_json::ColoredFormatter;
+use serde_json::ser::{CompactFormatter, PrettyFormatter};
 use std::path::Path;
 
 #[derive(Parser, Debug)]
@@ -49,11 +51,14 @@ fn output(json_content: &str, inline: bool, selectors: String) {
                     println!(
                         "{}",
                         // Inline or pretty output
-                        if inline {
-                            serde_json::to_string(&items).unwrap()
+                        (if inline {
+                            ColoredFormatter::new(CompactFormatter {})
+                                .to_colored_json_auto(&items)
                         } else {
-                            serde_json::to_string_pretty(&items).unwrap()
-                        }
+                            ColoredFormatter::new(PrettyFormatter::new())
+                                .to_colored_json_auto(&items)
+                        })
+                        .unwrap()
                     )
                 }
                 Err(error) => println!("has no value: {:?}", error),
