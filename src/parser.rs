@@ -88,7 +88,9 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                         }
                         Rule::spread => group.0 = Some(()),
                         _ => {
-                            println!("Error, unable to parse invalid selectors");
+                            println!(
+                                "Error, unable to parse invalid selectors"
+                            );
                             todo!()
                         }
                     };
