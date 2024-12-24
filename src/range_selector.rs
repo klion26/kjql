@@ -16,7 +16,6 @@ pub fn range_selector(
                 None => json_array.len() - 1,
             };
             let is_default = start < end;
-            println!("=In range_selector= {:?}", json_array);
             if json_array.len() < start || json_array.len() < (end + 1) {
                 return Err(if selectors.len() == 1 {
                     [

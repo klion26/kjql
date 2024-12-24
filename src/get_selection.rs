@@ -5,7 +5,6 @@ use serde_json::Value;
 
 // returns a selection based on selectors and some JSON content.
 pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
-    println!("=In get_selectiosn= {:?}", selectors);
     // local copy of the origin json that will be reused in the loop.
     let mut inner_json = json.clone();
     selectors
@@ -35,11 +34,6 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
                         }
                     } else {
                         inner_json = inner_json[raw_selector].clone();
-                        eprintln!(
-                            "### debug get_selections:map:res for [{:?}] ###  \
-                             {:?}",
-                            raw_selector, inner_json
-                        );
                         Ok(inner_json.clone())
                     }
                 }

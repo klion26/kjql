@@ -30,10 +30,6 @@ pub fn group_walker(
 
             let is_spreading = spread.is_some();
 
-            println!(
-                "=In group_walker=[{:?}] [{:?}] [{:?}]",
-                is_spreading, output_json, filters
-            );
             match apply_filter(&output_json, &filters) {
                 Ok(filtered) => match filtered {
                     MaybeArray::Array(array) => Ok(if is_spreading {

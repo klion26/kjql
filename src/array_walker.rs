@@ -24,7 +24,6 @@ pub fn array_walker(
                     ]
                     .join("")
                 } else {
-                    println!("=====>");
                     [
                         "Index [",
                         array_index.to_string().as_str(),

@@ -2,6 +2,7 @@ use crate::types::Selector;
 use crate::types::{Group, Groups};
 use lazy_static::lazy_static;
 use pest::Parser;
+use pest_derive::*;
 use regex::Regex;
 
 #[derive(Parser)]
@@ -51,7 +52,6 @@ fn span_to_index(inner_span: &str) -> Selector {
     }
 }
 pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
-    println!("selectors:[{:?}]", selectors);
     match GroupsParser::parse(Rule::groups, selectors) {
         Ok(pairs) => {
             let mut groups: Groups = Vec::new();
@@ -63,12 +63,6 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                 for inner_pair in pair.into_inner() {
                     let inner_span = inner_pair.clone().as_span().as_str();
                     // populate the group based on the rules fond by the parser.
-                    println!(
-                        "Inner_span:[{:?}]<--[{:?}]<<--[{:?}]",
-                        inner_span,
-                        inner_pair.as_rule(),
-                        inner_pair
-                    );
                     match inner_pair.as_rule() {
                         Rule::default => {
                             group.2.push(span_to_default(inner_span))
