@@ -3,7 +3,7 @@ name = "kjql"
 version = "1.0.0"
 edition = "2021"
 authors = ["klion26 <klion26@apache.org>"]
-
+exclude = ["rustfmt.toml", "benchs/**/*"]
 [dev-dependencies]
 criterion = "0.5.1"
 
