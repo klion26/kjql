@@ -4,17 +4,16 @@ use serde_json::{json, Value};
 pub fn range_selector(
     map_index: usize,
     inner_json: &Value,
-    start: usize,
+    start: Option<usize>,
     end: Option<usize>,
     selectors: &[Selector],
     previous_selector: Option<&Selector>,
 ) -> Result<Value, String> {
     match inner_json.as_array() {
         Some(json_array) => {
-            let end = match end {
-                Some(end) => end,
-                None => json_array.len() - 1,
-            };
+            let start = start.unwrap_or(0);
+            let end = end.unwrap_or_else(|| json_array.len() - 1);
+
             let is_default = start < end;
             if json_array.len() < start || json_array.len() < (end + 1) {
                 return Err(if selectors.len() == 1 {

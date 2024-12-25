@@ -1,6 +1,7 @@
-use crate::apply_filter::apply_filter;
-use crate::flatten_json_array::flatten_json_array;
-use crate::get_selection::get_selections;
+use crate::{
+    apply_filter::apply_filter, flatten_json_array::flatten_json_array,
+    get_selection::get_selections,
+};
 
 use crate::types::{Group, MaybeArray};
 use serde_json::{json, Value};

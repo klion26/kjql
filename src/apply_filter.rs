@@ -1,5 +1,7 @@
-use crate::get_selection::get_selections;
-use crate::types::{ExtendedSelection, MaybeArray, Selection, Selector};
+use crate::{
+    get_selection::get_selections,
+    types::{ExtendedSelection, MaybeArray, Selection, Selector},
+};
 use rayon::prelude::*;
 use serde_json::{json, Value};
 

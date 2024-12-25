@@ -1,6 +1,6 @@
 use crate::utils::{
     display_array_selector, display_default_selector, display_index_selector,
-    display_range_selector,
+    display_object_selector, display_range_selector,
 };
 use serde_json::Value;
 
@@ -10,8 +10,9 @@ pub type Selection = Result<Vec<Value>, String>;
 pub enum Selector {
     Default(String),
     Array,
-    Index(usize),
-    Range((usize, usize)),
+    Index(Vec<usize>),
+    Object(Vec<String>),
+    Range((Option<usize>, Option<usize>)),
 }
 
 pub trait Display {
@@ -27,10 +28,13 @@ impl Display for Selector {
             }
             Selector::Array => display_array_selector(capitalized),
             Selector::Index(index) => {
-                display_index_selector(*index, capitalized)
+                display_index_selector(index, capitalized)
             }
             Selector::Range(range) => {
                 display_range_selector(*range, capitalized)
+            }
+            Selector::Object(properties) => {
+                display_object_selector(properties, capitalized)
             }
         }
     }

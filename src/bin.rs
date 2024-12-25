@@ -5,10 +5,12 @@ extern crate pest;
 extern crate serde_json;
 
 use clap::Parser;
-use std::fs::File;
-use std::io;
-use std::io::{BufRead, BufReader, Read};
-use std::string::String;
+use std::{
+    fs::File,
+    io,
+    io::{BufRead, BufReader, Read},
+    string::String,
+};
 
 use colored_json::ColoredFormatter;
 use kjql::walker;
@@ -18,7 +20,8 @@ use std::path::Path;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
 pub struct CommandArgs {
-    #[arg(short, long, default_value = None, help = "The JSON file to query, will read from stdin if not given")]
+    #[arg(short, long, default_value = None, help = "The JSON file to query, will read from stdin if not given"
+    )]
     file: Option<String>,
     #[arg(short, long)]
     selector: String,

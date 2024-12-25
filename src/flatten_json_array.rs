@@ -1,6 +1,5 @@
 use rayon::prelude::*;
-use serde_json::json;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 pub fn flatten_json_array(value: &Value) -> Value {
     json!(value

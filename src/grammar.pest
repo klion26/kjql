@@ -1,4 +1,5 @@
-char = {
+char = _{
+    // will consume ANY if the first char is not '"' or '\'
     !("\"" | "\\" ) ~ ANY
     | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
@@ -6,21 +7,36 @@ char = {
 
 quote = { "\""}
 
-default = { quote ~ char* ~ quote }
+chars = { char* }
 
-range = { "[" ~ ASCII_DIGIT+ ~ ":" ~ ASCII_DIGIT+ ~ "]"}
+// this will be atomic pair, and ~ means "immediately followed by".
+// In addition, all other rules called from an atomic rule are also treated as atomic.
+default = ${ quote ~ chars ~ quote }
 
-index = { "[" ~ (ASCII_DIGIT+)? ~ "]"}
+range = { start? ~ ":" ~ end? }
 
-selector = _{ range | index | default }
+index = { number? ~ ("," ~ number)* }
+
+number = { ASCII_DIGIT+ }
+start = { number }
+end = { number }
+
+array = _{ "[" ~ (range | index) ~ "]" }
+
+selector = _{ array | object | default }
 
 pipe = _{ "|" }
 
-filterDefault = { default }
-filterRange = { range }
-filterIndex =  { index }
+property = { default ~ ("," ~ default)* }
 
-filter = _{ filterRange | filterIndex | filterDefault }
+object = _{ "{" ~ property ~ "}" }
+
+filter_default = { default }
+
+filter_range = { range }
+filter_index = { index }
+filter_array = _{ "[" ~ (filter_range | filter_index) ~ "]"}
+filter = _{ filter_array | filter_default }
 
 filters = _ { pipe ~ filter ~ ("."? ~ filter)* }
 
@@ -31,3 +47,5 @@ root = { "." }
 selection = { (spread? ~ root? ~ (selector ~ ("."? ~ selector)*)?)? ~ filters* }
 
 groups = _{ selection ~ ("," ~ selection)* }
+
+WHITESPACE = _{ " " }
