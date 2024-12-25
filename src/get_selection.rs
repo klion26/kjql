@@ -35,19 +35,6 @@ fn apply_selector(
     }
 }
 
-// Merge two JSON objects.
-// https://github.com/serde-rs/json/issues/377#issuecomment-341490464
-fn merge(a: &mut Value, b: &Value) {
-    match (a, b) {
-        (&mut Value::Object(ref mut a), Value::Object(b)) => {
-            for (key, value) in b {
-                merge(a.entry(key.clone()).or_insert(Value::Null), value)
-            }
-        }
-        (a, b) => *a = b.clone(),
-    }
-}
-
 // returns a selection based on selectors and some JSON content.
 pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
     // local copy of the origin json that will be reused in the loop.
@@ -58,9 +45,10 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
         .map(|(map_index, current_selector)| -> Result<Value, String> {
             match current_selector {
                 // Object selector.
-                Selector::Object(properties) => properties.iter().try_fold(
-                    Ok(Value::Null),
+                Selector::Object(properties) => properties.iter().fold(
+                    Ok(json!({})),
                     |acc: Result<Value, String>, property| {
+                        println!("{}", property);
                         let value = apply_selector(
                             &inner_json,
                             map_index,
@@ -70,10 +58,12 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
                         match value {
                             Ok(value) => match acc {
                                 Ok(mut current) => {
-                                    merge(
-                                        &mut current,
-                                        &json!( { property.as_str(): value }),
-                                    );
+                                    // get the associated mutable Map and insert
+                                    // the property.
+                                    current
+                                        .as_object_mut()
+                                        .unwrap()
+                                        .insert(property.clone(), value);
                                     Ok(current)
                                 }
                                 Err(error) => Err(error),
