@@ -79,7 +79,8 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
         Ok(pairs) => {
             let mut groups: Groups = Vec::new();
             for pair in pairs {
-                let mut group: Group = (None, None, Vec::new(), Vec::new());
+                let mut group: Group =
+                    (None, None, Vec::new(), Vec::new(), None);
                 // Loop over the pairs converted as an iterator of the tokens
                 // which composed it.
                 for inner_pair in pair.into_inner() {
@@ -122,6 +123,8 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                         Rule::root => group.1 = Some(()),
                         // spread
                         Rule::spread => group.0 = Some(()),
+                        // truncate
+                        Rule::truncate => group.4 = Some(()),
                         _ => {
                             println!(
                                 "Error, unable to parse invalid selectors"

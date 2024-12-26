@@ -11,6 +11,7 @@ mod group_walker;
 mod parser;
 mod range_selector;
 mod tests;
+mod truncate;
 mod types;
 mod utils;
 

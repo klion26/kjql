@@ -45,7 +45,9 @@ spread = { ".." }
 
 root = { "." }
 
-selection = { (spread? ~ root? ~ (selector ~ ("."? ~ selector)*)?)? ~ filters* }
+truncate = { "!" }
+
+selection = { (spread? ~ root? ~ (selector ~ ("."? ~ selector)*)?)? ~ filters* ~ truncate? }
 
 groups = _{ selection ~ ("," ~ selection)* }
 

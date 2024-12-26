@@ -13,7 +13,7 @@ fn apply_selector(
 ) -> Selection {
     // No JSON value has been found.
     if inner_json.get(raw_selector).is_none() {
-        if map_index == 0 {
+        return if map_index == 0 {
             Err([
                 r#"Node ""#,
                 raw_selector,
@@ -28,11 +28,11 @@ fn apply_selector(
                 &selectors[map_index - 1].as_str(false),
             ]
             .join(""))
-        }
-    } else {
-        // Default case
-        Ok(inner_json[raw_selector].clone())
+        };
     }
+
+    // Default case
+    Ok(inner_json[raw_selector].clone())
 }
 
 // returns a selection based on selectors and some JSON content.

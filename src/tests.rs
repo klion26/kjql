@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::{core::walker, flatten_json_array::flatten_json_array};
+    use crate::{
+        core::walker, flatten_json_array::flatten_json_array,
+        truncate::truncate_json,
+    };
     use serde_json::{json, Value};
 
     // The following constants are all valid JSON.
@@ -652,5 +655,99 @@ mod tests {
             Ok(json["nested"]["a"].clone()),
             walker(&json, selector_with_spaces)
         );
+    }
+
+    #[test]
+    fn truncate_array() {
+        assert_eq!(
+            json!([[], {}, "woot", 7, null]),
+            truncate_json(json!([[1,2,3], {"foo":"bar"}, "woot", 7, null]))
+        );
+    }
+
+    #[test]
+    fn check_truncate_on_root() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some(r#".!"#);
+        assert_eq!(
+            Ok(json!({
+                "array": [],
+                "empty-array": [],
+                "nested": {},
+                "null": null,
+                "number": 1337,
+                "text": "some text",
+                ".property..": "This is valid JSON!",
+                "\"": "This is valid JSON as well",
+                " ": "Yup, this too 🐼!",
+                "": "Yup, again 🐨!",
+                "mix": [],
+                "range": [],
+                "filter": [],
+                "nested-filter": [],
+                "filter-to-flatten": [],
+                "nested-filter-to-flatten": [],
+            })),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn check_truncate_on_nested_value() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some(r#""nested-filter".[0]."laptop"!"#);
+        assert_eq!(
+            Ok(json!({
+                "brand": "Apple",
+                "options": [],
+                "price": 9999
+            })),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn check_truncate_on_groups() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some(r#""nested-filter".[0]."laptop"!, "filter"!"#);
+        assert_eq!(
+            Ok(json!([
+                {"brand": "Apple", "options": [], "price": 9999},
+                [{},{},{}]
+            ])),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn check_truncate_with_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some(r#""nested-filter-to-flatten"|"fruit"!"#);
+        assert_eq!(Ok(json!([{}, {}])), walker(&json, selector));
+    }
+
+    #[test]
+    fn truncate_object() {
+        assert_eq!(
+            json!({"foo":[], "bar": {}, "woot": "what", "number":7, "nothing": null }),
+            truncate_json(
+                json!({"foo": [], "bar": {}, "woot": "what", "number": 7, "nothing": null})
+            )
+        );
+    }
+
+    #[test]
+    fn truncate_string() {
+        assert_eq!(json!("something"), truncate_json(json!("something")));
+    }
+
+    #[test]
+    fn truncate_number() {
+        assert_eq!(json!(7), truncate_json(json!(7)));
+    }
+
+    #[test]
+    fn truncate_null() {
+        assert_eq!(json!(null), truncate_json(json!(null)));
     }
 }

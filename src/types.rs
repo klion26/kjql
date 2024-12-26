@@ -49,6 +49,8 @@ pub type Group = (
     Vec<Selector>,
     // filters part.
     Vec<Selector>,
+    // Truncate part.
+    Option<()>,
 );
 
 pub type Groups = Vec<Group>;
