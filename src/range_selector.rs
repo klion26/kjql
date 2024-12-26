@@ -11,6 +11,10 @@ pub fn range_selector(
 ) -> Selection {
     match inner_json.as_array() {
         Some(json_array) => {
+            if json_array.is_empty() {
+                return Ok(json!([]));
+            }
+
             let start = start.unwrap_or(0);
             let end = end.unwrap_or_else(|| json_array.len() - 1);
 
