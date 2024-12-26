@@ -14,7 +14,10 @@ use std::{
 
 use colored_json::ColoredFormatter;
 use kjql::walker;
-use serde_json::ser::{CompactFormatter, PrettyFormatter};
+use serde_json::{
+    ser::{CompactFormatter, PrettyFormatter},
+    Deserializer, Value,
+};
 use std::path::Path;
 
 #[derive(Parser, Debug)]
@@ -33,29 +36,31 @@ pub struct CommandArgs {
 
 /// Try to serialize the raw JSON content, output selection or throw an error.
 fn output(json_content: &str, inline: bool, selectors: String) {
-    match serde_json::from_str(json_content) {
-        Ok(valid_json) => {
-            // walk through the JSON content with the provided selector.
-            match walker(&valid_json, Some(selectors.as_str())) {
-                Ok(items) => {
-                    println!(
-                        "{}",
-                        // Inline or pretty output
-                        (if inline {
-                            ColoredFormatter::new(CompactFormatter {})
-                                .to_colored_json_auto(&items)
-                        } else {
-                            ColoredFormatter::new(PrettyFormatter::new())
-                                .to_colored_json_auto(&items)
-                        })
-                        .unwrap()
-                    )
+    Deserializer::from_str(json_content)
+        .into_iter::<Value>()
+        .for_each(|value| match value {
+            Ok(valid_json) => {
+                // walk through the JSON content with the provided selector.
+                match walker(&valid_json, Some(selectors.as_str())) {
+                    Ok(items) => {
+                        println!(
+                            "{}",
+                            // Inline or pretty output
+                            (if inline {
+                                ColoredFormatter::new(CompactFormatter {})
+                                    .to_colored_json_auto(&items)
+                            } else {
+                                ColoredFormatter::new(PrettyFormatter::new())
+                                    .to_colored_json_auto(&items)
+                            })
+                            .unwrap()
+                        )
+                    }
+                    Err(error) => println!("has no value: {:?}", error),
                 }
-                Err(error) => println!("has no value: {:?}", error),
             }
-        }
-        Err(_) => println!("Invalid JSON file or content!"),
-    }
+            Err(_) => println!("Invalid JSON file or content!"),
+        });
 }
 
 fn main() {
