@@ -40,7 +40,8 @@ mod tests {
                         "a",
                         "b",
                         "c"
-                    ]
+                    ],
+                    "price": 9999
                 }
             },
             {
@@ -50,7 +51,8 @@ mod tests {
                         "d",
                         "e",
                         "f"
-                    ]
+                    ],
+                    "price": 999
                 }
             }
        ],
@@ -588,7 +590,6 @@ mod tests {
         )
     }
 
-
     #[test]
     fn get_non_existing_properties_root() {
         let json: Value = serde_json::from_str(OBJECT_DATA).unwrap();
@@ -607,6 +608,18 @@ mod tests {
             Err(String::from(
                 r#"Node "x" not found on parent node "nested""#
             )),
+            walker(&json, selector)
+        )
+    }
+
+    #[test]
+    fn get_properties_in_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = Some(r#""nested-filter"|"laptop"|{"price","brand"}"#);
+        assert_eq!(
+            Ok(
+                json!([{"price": 9999, "brand": "Apple"}, {"price": 999, "brand": "Asus" }])
+            ),
             walker(&json, selector)
         )
     }

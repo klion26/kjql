@@ -32,11 +32,12 @@ property = { default ~ ("," ~ default)* }
 object = _{ "{" ~ property ~ "}" }
 
 filter_default = { default }
-
+filter_property = { default ~ ("," ~ default) * }
+filter_object = _{ "{" ~ filter_property ~ "}" }
 filter_range = { range }
 filter_index = { index }
 filter_array = _{ "[" ~ (filter_range | filter_index) ~ "]"}
-filter = _{ filter_array | filter_default }
+filter = _{ filter_array | filter_object | filter_default }
 
 filters = _ { pipe ~ filter ~ ("."? ~ filter)* }
 

@@ -86,6 +86,7 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                     let inner_span = inner_pair.clone().as_span().as_str();
                     // populate the group based on the rules fond by the parser.
                     match inner_pair.as_rule() {
+                        // Default
                         Rule::default => group.2.push(span_to_default(
                             &get_chars_from_default_pair(inner_pair)[0],
                         )),
@@ -96,12 +97,13 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                                 inner_pair.into_inner().next().unwrap(),
                             )[0],
                         )),
+                        // index
                         Rule::index => group.2.push(span_to_index(inner_span)),
                         Rule::filter_index => {
                             group.3.push(span_to_index(inner_span))
                         }
+                        // range
                         Rule::range => group.2.push(span_to_range(inner_pair)),
-                        Rule::root => group.1 = Some(()),
                         Rule::filter_range => {
                             // filter_range will reuse range
                             // we need to unfold to the inner_pair here
@@ -109,9 +111,16 @@ pub fn selectors_parser(selectors: &str) -> Result<Groups, String> {
                                 inner_pair.into_inner().next().unwrap(),
                             ))
                         }
+                        // property
                         Rule::property => group.2.push(span_to_object(
                             get_nested_chars_from_default_pair(inner_pair),
                         )),
+                        Rule::filter_property => group.3.push(span_to_object(
+                            get_nested_chars_from_default_pair(inner_pair),
+                        )),
+                        // root
+                        Rule::root => group.1 = Some(()),
+                        // spread
                         Rule::spread => group.0 = Some(()),
                         _ => {
                             println!(
