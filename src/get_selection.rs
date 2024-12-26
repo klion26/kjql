@@ -1,7 +1,7 @@
 use crate::{
     array_walker::array_walker,
     range_selector::range_selector,
-    types::{Display, Selection, Selector, Selectors},
+    types::{Display, Selection, Selections, Selector, Selectors},
 };
 use serde_json::{json, Value};
 
@@ -10,7 +10,7 @@ fn apply_selector(
     map_index: usize,
     raw_selector: &str,
     selectors: &Selectors,
-) -> Result<Value, String> {
+) -> Selection {
     // No JSON value has been found.
     if inner_json.get(raw_selector).is_none() {
         if map_index == 0 {
@@ -36,18 +36,18 @@ fn apply_selector(
 }
 
 // returns a selection based on selectors and some JSON content.
-pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
+pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
     // local copy of the origin json that will be reused in the loop.
     let mut inner_json = json.clone();
     selectors
         .iter()
         .enumerate()
-        .map(|(map_index, current_selector)| -> Result<Value, String> {
+        .map(|(map_index, current_selector)| -> Selection {
             match current_selector {
                 // Object selector.
                 Selector::Object(properties) => properties.iter().fold(
                     Ok(json!({})),
-                    |acc: Result<Value, String>, property| {
+                    |acc: Selection, property| {
                         println!("{}", property);
                         let value = apply_selector(
                             &inner_json,
@@ -90,10 +90,10 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
 
                 // range selector
                 Selector::Range((start, end)) => match range_selector(
-                    map_index,
                     &inner_json.clone(),
                     *start,
                     *end,
+                    map_index,
                     &selectors,
                     if map_index == 0 {
                         None
@@ -110,10 +110,10 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
 
                 // Array selector.
                 Selector::Array => match range_selector(
-                    map_index,
                     &inner_json.clone(),
                     Some(0),
                     None,
+                    map_index,
                     &selectors,
                     if map_index == 0 {
                         None
@@ -130,9 +130,9 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selection {
 
                 // Index selector
                 Selector::Index(array_index) => match array_walker(
-                    map_index,
                     &array_index,
                     &inner_json,
+                    map_index,
                     &selectors,
                 ) {
                     Ok(json) => {

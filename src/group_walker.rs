@@ -3,14 +3,14 @@ use crate::{
     get_selection::get_selections,
 };
 
-use crate::types::{Group, MaybeArray};
+use crate::types::{Group, MayArray, Selection};
 use serde_json::{json, Value};
 
 // walks through a group
 pub fn group_walker(
     (spread, root, selectors, filters): &Group,
     json: &Value,
-) -> Result<Value, String> {
+) -> Selection {
     // empty group, return early
     if selectors.is_empty() && root.is_none() {
         return Err(String::from("Empty group"));
@@ -31,14 +31,14 @@ pub fn group_walker(
 
             let is_spreading = spread.is_some();
 
-            match apply_filter(&output_json, &filters) {
+            match apply_filter(&filters, &output_json) {
                 Ok(filtered) => match filtered {
-                    MaybeArray::Array(array) => Ok(if is_spreading {
+                    MayArray::Array(array) => Ok(if is_spreading {
                         json!(flatten_json_array(&json!(array)))
                     } else {
                         json!(array)
                     }),
-                    MaybeArray::NonArray(single_value) => {
+                    MayArray::NonArray(single_value) => {
                         if is_spreading {
                             Err(String::from("Only array can be flattened."))
                         } else {

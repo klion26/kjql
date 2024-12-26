@@ -4,8 +4,6 @@ use crate::utils::{
 };
 use serde_json::Value;
 
-pub type Selection = Result<Vec<Value>, String>;
-
 #[derive(Debug)]
 pub enum Selector {
     Default(String),
@@ -14,6 +12,8 @@ pub enum Selector {
     Object(Vec<String>),
     Range((Option<usize>, Option<usize>)),
 }
+
+pub type Selectors = [Selector];
 
 pub trait Display {
     fn as_str(&self, capitalized: bool) -> String;
@@ -40,16 +40,6 @@ impl Display for Selector {
     }
 }
 
-#[derive(Debug)]
-pub enum MaybeArray {
-    Array(Vec<Value>),
-    NonArray(Vec<Value>),
-}
-
-pub type Selectors = [Selector];
-
-pub type ExtendedSelection = Result<MaybeArray, String>;
-
 pub type Group = (
     // spread part.
     Option<()>,
@@ -62,3 +52,15 @@ pub type Group = (
 );
 
 pub type Groups = Vec<Group>;
+
+#[derive(Debug)]
+pub enum MayArray {
+    Array(Vec<Value>),
+    NonArray(Vec<Value>),
+}
+
+pub type Selection = Result<Value, String>;
+
+pub type Selections = Result<Vec<Value>, String>;
+
+pub type ExtendedSelections = Result<MayArray, String>;
