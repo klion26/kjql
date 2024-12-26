@@ -19,6 +19,7 @@ use serde_json::{
     Deserializer, Value,
 };
 use std::path::Path;
+use std::process::exit;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
@@ -76,10 +77,16 @@ fn output(
                             })
                         );
                     }
-                    Err(error) => println!("has no value: {:?}", error),
+                    Err(error) => {
+                        println!("has no value: {:?}", error);
+                        exit(1);
+                    }
                 }
             }
-            Err(_) => println!("Invalid JSON file or content!"),
+            Err(_) => {
+                println!("Invalid JSON file or content!");
+                exit(1);
+            }
         });
 }
 
@@ -105,7 +112,7 @@ fn main() {
                     args.raw_output,
                 ),
                 Err(error) => {
-                    panic!("Couldn't read {}: {}", path.display(), error)
+                    panic!("Couldn't read {}: {}", path.display(), error);
                 }
             }
         }
@@ -116,7 +123,10 @@ fn main() {
                 Ok(json) => {
                     output(&json, args.inline, selector, args.raw_output)
                 }
-                Err(error) => eprintln!("error: {}", error),
+                Err(error) => {
+                    eprintln!("error: {}", error);
+                    exit(1);
+                }
             }
         }
     }
