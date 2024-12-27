@@ -27,12 +27,15 @@ selector = _{ array | object | default }
 
 pipe = _{ "|" }
 
-property = { default ~ ("," ~ default)* }
+object_range = { range }
+object_index = { index }
+object_array = _{ "[" ~ (object_range | object_index) ~ "]" }
+property = { (default | object_array)  ~ ("," ~ (default | object_array))* }
 
 object = _{ "{" ~ property ~ "}" }
 
 filter_default = { default }
-filter_property = { default ~ ("," ~ default) * }
+filter_property = { (default | object_array) ~ ("," ~ (default | object_array)) * }
 filter_object = _{ "{" ~ filter_property ~ "}" }
 filter_range = { range }
 filter_index = { index }
