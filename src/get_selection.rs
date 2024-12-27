@@ -3,7 +3,6 @@ use crate::{
     range_selector::range_selector,
     types::{Display, Selection, Selections, Selector, Selectors},
 };
-use rayon::prelude::*;
 use serde_json::{json, Value};
 
 fn apply_selector(
@@ -95,7 +94,7 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                     *start,
                     *end,
                     map_index,
-                    &selectors,
+                    selectors,
                     if map_index == 0 {
                         None
                     } else {
@@ -115,7 +114,7 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                     Some(0),
                     None,
                     map_index,
-                    &selectors,
+                    selectors,
                     if map_index == 0 {
                         None
                     } else {
@@ -131,10 +130,10 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
 
                 // Index selector
                 Selector::Index(array_index) => match array_walker(
-                    &array_index,
+                    array_index,
                     &inner_json,
                     map_index,
-                    &selectors,
+                    selectors,
                 ) {
                     Ok(ref json) => {
                         inner_json = json.clone();

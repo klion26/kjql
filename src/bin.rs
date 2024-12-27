@@ -7,7 +7,7 @@ extern crate serde_json;
 use std::string::String;
 
 use anyhow::Result;
-use async_std::{fs, io, path::Path, prelude::*, process::exit, task};
+use async_std::{fs, io, path::Path, prelude::*, process::exit};
 use clap::Parser;
 use colored_json::{ColoredFormatter, Paint};
 use kjql::walker;
@@ -157,7 +157,7 @@ async fn main() -> Result<()> {
                         selector.as_str(),
                         args.raw_output,
                     );
-                    return Ok(());
+                    Ok(())
                 }
                 Err(error) => {
                     eprintln!("{}", error);

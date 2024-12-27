@@ -21,7 +21,7 @@ pub fn apply_filter(
                     if filter_selectors.is_empty() {
                         Ok(vec![partial_json])
                     } else {
-                        get_selections(&filter_selectors, &partial_json)
+                        get_selections(filter_selectors, &partial_json)
                     }
                 })
                 .collect();

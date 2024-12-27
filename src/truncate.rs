@@ -14,7 +14,7 @@ pub fn truncate_json(mut value: Value) -> Value {
             .as_array_mut()
             .unwrap()
             .iter()
-            .map(|element| to_primitive(element))
+            .map(&to_primitive)
             .collect::<Value>(),
         _ if value.is_object() => {
             Value::Object(value.as_object().unwrap().iter().fold(

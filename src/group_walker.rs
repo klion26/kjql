@@ -21,7 +21,7 @@ pub fn group_walker(
 
     // check for empty selection, in this case we assume that the user expects
     // to get back the complete raw JSON back for this group.
-    match get_selections(&selectors, &json) {
+    match get_selections(selectors, json) {
         Ok(ref items) => {
             // check for an empty selection, in this case we assume that the
             // user expects to get back the complete raw JSON for
@@ -34,7 +34,7 @@ pub fn group_walker(
 
             let is_spreading = spread.is_some();
 
-            let output = match apply_filter(&filters, &output_json) {
+            let output = match apply_filter(filters, &output_json) {
                 Ok(filtered) => match filtered {
                     MayArray::Array(array) => Ok(if is_spreading {
                         json!(flatten_json_array(&json!(array)))
