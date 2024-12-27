@@ -4,22 +4,17 @@ extern crate clap;
 extern crate pest;
 extern crate serde_json;
 
-use clap::Parser;
-use std::{
-    fs::File,
-    io,
-    io::{BufRead, BufReader, Read},
-    string::String,
-};
+use std::string::String;
 
-use colored_json::ColoredFormatter;
+use anyhow::Result;
+use async_std::{fs, io, path::Path, prelude::*, process::exit, task};
+use clap::Parser;
+use colored_json::{ColoredFormatter, Paint};
 use kjql::walker;
 use serde_json::{
     ser::{CompactFormatter, PrettyFormatter},
     Deserializer, Value,
 };
-use std::path::Path;
-use std::process::exit;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
@@ -39,15 +34,17 @@ pub struct CommandArgs {
                 without JSON dobule-quotes"
     )]
     raw_output: bool,
+    #[arg(short, long, default_value = "false")]
+    stream: bool,
     #[arg(help = "The JSON selector to query the JSON content")]
     selector: String,
 }
 
 /// Try to serialize the raw JSON content, output selection or throw an error.
-fn output(
+fn render_output(
     json_content: &str,
     inline: bool,
-    selectors: String,
+    selectors: &str,
     raw_output: bool,
 ) {
     Deserializer::from_str(json_content)
@@ -55,7 +52,7 @@ fn output(
         .for_each(|value| match value {
             Ok(valid_json) => {
                 // walk through the JSON content with the provided selector.
-                match walker(&valid_json, Some(selectors.as_str())) {
+                match walker(&valid_json, Some(selectors)) {
                     Ok(selection) => {
                         println!(
                             "{}",
@@ -90,7 +87,8 @@ fn output(
         });
 }
 
-fn main() {
+#[async_std::main]
+async fn main() -> Result<()> {
     // parse the command
     let args = CommandArgs::parse();
 
@@ -98,36 +96,54 @@ fn main() {
     match args.file {
         Some(file) => {
             let path = Path::new(&file);
-            let file = match File::open(path) {
-                Err(error) => panic!("{}", error),
-                Ok(file) => file,
-            };
-            let mut buffer_reader = BufReader::new(file);
-            let mut contents = String::new();
-            match buffer_reader.read_to_string(&mut contents) {
-                Ok(_) => output(
-                    contents.as_str(),
-                    args.inline,
-                    selector,
-                    args.raw_output,
-                ),
-                Err(error) => {
-                    panic!("Couldn't read {}: {}", path.display(), error);
-                }
-            }
+
+            let contents = fs::read_to_string(path).await?;
+            render_output(
+                &contents,
+                args.inline,
+                selector.as_str(),
+                args.raw_output,
+            );
+            Ok(())
         }
+        // JSON content coming from stdin.
         None => {
-            let stdin: Result<String, std::io::Error> =
-                io::stdin().lock().lines().collect();
-            match stdin {
-                Ok(json) => {
-                    output(&json, args.inline, selector, args.raw_output)
+            let stream = args.stream;
+            task::block_on(async {
+                let stdin = io::stdin();
+                let mut stdout = io::stdout();
+                let mut line = String::new();
+
+                loop {
+                    // read a line from stdin
+                    let n = stdin.read_line(&mut line).await?;
+                    // check for the EOF.
+                    if n == 0 {
+                        if !stream {
+                            render_output(
+                                &line,
+                                args.inline,
+                                selector.as_str(),
+                                args.raw_output,
+                            );
+                        }
+
+                        return Ok(());
+                    }
+
+                    // render every line for the stream option.
+                    if stream {
+                        render_output(
+                            &line,
+                            args.inline,
+                            selector.as_str(),
+                            args.raw_output,
+                        );
+                        stdout.flush().await?;
+                        line.resetting();
+                    }
                 }
-                Err(error) => {
-                    eprintln!("error: {}", error);
-                    exit(1);
-                }
-            }
+            })
         }
     }
 }

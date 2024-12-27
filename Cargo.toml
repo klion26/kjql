@@ -8,6 +8,8 @@ exclude = ["rustfmt.toml", "benchs/**/*"]
 criterion = "0.5.1"
 
 [dependencies]
+anyhow = "1.0.40"
+async-std = { version = "1.13.0", features = ["attributes", "unstable"] }
 clap = { version = "4.5.4", features = ["derive"] }
 pest = "2.7.15"
 pest_derive = "2.1.0"
