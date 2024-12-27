@@ -1,4 +1,5 @@
 use crate::types::{Display, Selection, Selector};
+use rayon::prelude::*;
 use serde_json::{json, Value};
 
 pub fn range_selector(
@@ -55,7 +56,7 @@ pub fn range_selector(
                     normalized_range_selection
                         .as_array()
                         .unwrap()
-                        .iter()
+                        .par_iter()
                         .rev()
                         .collect();
                 json!(reversed_range_selection)

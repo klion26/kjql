@@ -3,6 +3,7 @@ use crate::{
     range_selector::range_selector,
     types::{Display, Selection, Selections, Selector, Selectors},
 };
+use rayon::prelude::*;
 use serde_json::{json, Value};
 
 fn apply_selector(
@@ -80,9 +81,9 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                         raw_selector,
                         selectors,
                     ) {
-                        Ok(json) => {
+                        Ok(ref json) => {
                             inner_json = json.clone();
-                            Ok(json)
+                            Ok(json.clone())
                         }
                         Err(error) => Err(error),
                     }
@@ -101,9 +102,9 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                         Some(&selectors[map_index - 1])
                     },
                 ) {
-                    Ok(json) => {
+                    Ok(ref json) => {
                         inner_json = json.clone();
-                        Ok(json)
+                        Ok(json.clone())
                     }
                     Err(error) => Err(error),
                 },
@@ -121,9 +122,9 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                         Some(&selectors[map_index - 1])
                     },
                 ) {
-                    Ok(json) => {
+                    Ok(ref json) => {
                         inner_json = json.clone();
-                        Ok(json)
+                        Ok(json.clone())
                     }
                     Err(error) => Err(error),
                 },
@@ -135,7 +136,7 @@ pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
                     map_index,
                     &selectors,
                 ) {
-                    Ok(json) => {
+                    Ok(ref json) => {
                         inner_json = json.clone();
                         Ok(json.clone())
                     }

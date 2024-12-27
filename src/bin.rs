@@ -109,13 +109,16 @@ async fn main() -> Result<()> {
         // JSON content coming from stdin.
         None => {
             let stream = args.stream;
-            task::block_on(async {
-                let stdin = io::stdin();
-                let mut stdout = io::stdout();
+            let mut stdin = io::stdin();
+            let mut stdout = io::stdout();
+
+            // special case for the stream option.
+            // in this case, read line by line.
+            if stream {
                 let mut line = String::new();
 
                 loop {
-                    // read a line from stdin
+                    // read one line from stdin
                     let n = stdin.read_line(&mut line).await?;
                     // check for the EOF.
                     if n == 0 {
@@ -132,18 +135,35 @@ async fn main() -> Result<()> {
                     }
 
                     // render every line for the stream option.
-                    if stream {
-                        render_output(
-                            &line,
-                            args.inline,
-                            selector.as_str(),
-                            args.raw_output,
-                        );
-                        stdout.flush().await?;
-                        line.resetting();
-                    }
+                    render_output(
+                        &line,
+                        args.inline,
+                        selector.as_str(),
+                        args.raw_output,
+                    );
+                    stdout.flush().await?;
+                    line.resetting();
                 }
-            })
+            }
+
+            // by default, read the whole piped content from stdin
+            let mut buffer = Vec::new();
+            stdin.read_to_end(&mut buffer).await?;
+            match String::from_utf8(buffer) {
+                Ok(lines) => {
+                    render_output(
+                        &lines,
+                        args.inline,
+                        selector.as_str(),
+                        args.raw_output,
+                    );
+                    return Ok(());
+                }
+                Err(error) => {
+                    eprintln!("{}", error);
+                    exit(1);
+                }
+            }
         }
     }
 }
