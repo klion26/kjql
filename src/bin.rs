@@ -29,12 +29,13 @@ pub struct CommandArgs {
     file: Option<String>,
     #[arg(short, long, default_value = "false")]
     pretty: bool,
-    #[arg(short, long, help = "Inlines JSON output")]
+    #[arg(short, long, conflicts_with = "check", help = "Inlines JSON output")]
     inline: bool,
     #[arg(
         short,
         long,
         default_value = "false",
+        conflicts_with = "check",
         help = "Writes raw strings selection directly to standard output \
                 without JSON dobule-quotes"
     )]
