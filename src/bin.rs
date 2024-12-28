@@ -19,7 +19,12 @@ use serde_json::{
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
 pub struct CommandArgs {
-    #[arg(short, long, default_value = None, help = "The JSON file to query, will read from stdin if not given"
+    #[arg(
+        short,
+        long,
+        required = false,
+        index = 2,
+        help = "The JSON file to query, will read from stdin if not given"
     )]
     file: Option<String>,
     #[arg(short, long, default_value = "false")]
@@ -36,8 +41,19 @@ pub struct CommandArgs {
     raw_output: bool,
     #[arg(short, long, default_value = "false")]
     stream: bool,
-    #[arg(help = "The JSON selector to query the JSON content")]
-    selector: String,
+    #[arg(
+        short,
+        long,
+        default_value = "false",
+        help = "Checks if the input is valid JSON"
+    )]
+    check: bool,
+    #[arg(
+        index = 1,
+        required_unless_present = "check",
+        help = "The JSON selector to query the JSON content"
+    )]
+    selector: Option<String>,
 }
 
 /// Try to serialize the raw JSON content, output selection or throw an error.
@@ -46,7 +62,21 @@ fn render_output(
     inline: bool,
     selectors: &str,
     raw_output: bool,
+    check: bool,
 ) {
+    if check {
+        match serde_json::from_str::<Value>(json_content) {
+            Ok(_) => {
+                println!("{}", Paint::green("Valid JSON content!"));
+                exit(0);
+            }
+            Err(error) => {
+                println!("{}", Paint::red("Invalid JSON content: {}"));
+                exit(1);
+            }
+        }
+    }
+
     Deserializer::from_str(json_content)
         .into_iter::<Value>()
         .for_each(|value| match value {
@@ -92,8 +122,15 @@ async fn main() -> Result<()> {
     // parse the command
     let args = CommandArgs::parse();
 
-    let selector = args.selector;
-    match args.file {
+    let selectors: String = args
+        .selector
+        .clone()
+        .map_or_else(|| String::from(""), |item| item);
+    let selectors = selectors.as_str();
+
+    // hack here, if the check flag enabled, we use the first arguments as files
+    // in normal mode the first is `selector` and the second is `files`
+    match if args.check { args.selector } else { args.file } {
         Some(file) => {
             let path = Path::new(&file);
 
@@ -101,8 +138,9 @@ async fn main() -> Result<()> {
             render_output(
                 &contents,
                 args.inline,
-                selector.as_str(),
+                selectors,
                 args.raw_output,
+                args.check,
             );
             Ok(())
         }
@@ -126,8 +164,9 @@ async fn main() -> Result<()> {
                             render_output(
                                 &line,
                                 args.inline,
-                                selector.as_str(),
+                                selectors,
                                 args.raw_output,
+                                args.check,
                             );
                         }
 
@@ -138,8 +177,9 @@ async fn main() -> Result<()> {
                     render_output(
                         &line,
                         args.inline,
-                        selector.as_str(),
+                        selectors,
                         args.raw_output,
+                        args.check,
                     );
                     stdout.flush().await?;
                     line.resetting();
@@ -154,8 +194,9 @@ async fn main() -> Result<()> {
                     render_output(
                         &lines,
                         args.inline,
-                        selector.as_str(),
+                        selectors,
                         args.raw_output,
+                        args.check,
                     );
                     Ok(())
                 }
