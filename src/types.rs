@@ -4,25 +4,34 @@ use crate::utils::{
 };
 use serde_json::Value;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Selector {
+    /// Default variant.
     Default(String),
+    /// Array variant.
     Array,
+    /// Index variant.
     Index(Vec<usize>),
+    /// Object variant.
     Object(Vec<InnerObject>),
+    /// Range variant.
     Range((Option<usize>, Option<usize>)),
 }
 
-#[derive(Debug)]
+/// Inner objects.
+#[derive(Debug, PartialEq, Eq)]
 pub enum InnerObject {
+    /// Array variant
     Array,
+    /// Index variant
     Index(Vec<usize>),
+    /// Key variant
     Key(String),
+    /// Range variant.
     Range((Option<usize>, Option<usize>)),
 }
 
-pub type Selectors = [Selector];
-
+#[doc(hidden)]
 pub trait Display {
     fn as_str(&self, capitalized: bool) -> String;
 }
@@ -63,29 +72,46 @@ impl Display for InnerObject {
         }
     }
 }
-pub type Group = (
-    // spread part.
-    Option<()>,
-    // Root part.
-    Option<()>,
-    // selectors part.
-    Vec<Selector>,
-    // filters part.
-    Vec<Selector>,
-    // Truncate part.
-    Option<()>,
-);
+/// A Group is a set of grammer elements used to define a selection.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Group {
+    /// filters.
+    pub filters: Vec<Selector>,
+    /// root marker.
+    pub root: Option<()>,
+    /// selectors.
+    pub selectors: Vec<Selector>,
+    /// spread marker.
+    pub spread: Option<()>,
+    /// truncate marker.
+    pub truncate: Option<()>,
+}
 
-pub type Groups = Vec<Group>;
+/// Group implementations
+impl Group {
+    /// Create a new group.
+    pub fn new() -> Self {
+        Self {
+            filters: Vec::new(),
+            root: None,
+            selectors: Vec::new(),
+            spread: None,
+            truncate: None,
+        }
+    }
+}
 
+impl Default for Group {
+    fn default() -> Self { Self::new() }
+}
+
+#[doc(hidden)]
 #[derive(Debug)]
 pub enum MayArray {
     Array(Vec<Value>),
     NonArray(Vec<Value>),
 }
 
-pub type Selection = Result<Value, String>;
-
-pub type Selections = Result<Vec<Value>, String>;
-
-pub type ExtendedSelections = Result<MayArray, String>;
+pub(crate) type Selection = Result<Value, String>;
+pub(crate) type Selections = Result<Vec<Value>, String>;
+pub(crate) type ExtendedSelections = Result<MayArray, String>;

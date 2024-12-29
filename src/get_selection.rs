@@ -1,7 +1,7 @@
 use crate::{
     array_walker::array_walker,
     range_selector::range_selector,
-    types::{Display, InnerObject, Selection, Selections, Selector, Selectors},
+    types::{Display, InnerObject, Selection, Selections, Selector},
 };
 use rayon::prelude::*;
 use serde_json::{json, Map, Value};
@@ -11,7 +11,7 @@ fn apply_selector(
     inner_json: &Value,
     map_index: usize,
     raw_selector: &str,
-    selectors: &Selectors,
+    selectors: &[Selector],
 ) -> Selection {
     // No JSON value has been found.
     if inner_json.get(raw_selector).is_none() {
@@ -50,7 +50,7 @@ fn object_to_vec(inner_json: &Value) -> Vec<(String, Value)> {
 }
 
 // returns a selection based on selectors and some JSON content.
-pub fn get_selections(selectors: &Selectors, json: &Value) -> Selections {
+pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
     // local copy of the origin json that will be reused in the loop.
     let data = Arc::new(Mutex::new(json.clone()));
     selectors

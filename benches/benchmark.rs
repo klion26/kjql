@@ -23,7 +23,7 @@ const DATA: &str = r#"{
 fn access_properties_benchmark(c: &mut Criterion) {
     let json: Value = serde_json::from_str(DATA).unwrap();
 
-    let selector = Some(r#""props"."a"."b"."c""#);
+    let selector = r#""props"."a"."b"."c""#;
     c.bench_function("Access properties", move |b| {
         b.iter(|| walker(&json, selector))
     });
@@ -31,7 +31,7 @@ fn access_properties_benchmark(c: &mut Criterion) {
 
 fn filter_array_benchmark(c: &mut Criterion) {
     let json: Value = serde_json::from_str(DATA).unwrap();
-    let selector = Some(r#""nested-filter"|"laptop"|"brand""#);
+    let selector = r#""nested-filter"|"laptop"|"brand""#;
     c.bench_function("Filter an array", move |b| {
         b.iter(|| walker(&json, selector))
     });

@@ -11,7 +11,13 @@ use serde_json::{json, Value};
 
 // walks through a group
 pub fn group_walker(
-    (spread, root, selectors, filters, truncate): &Group,
+    Group {
+        filters,
+        root,
+        selectors,
+        spread,
+        truncate,
+    }: &Group,
     json: &Value,
 ) -> Selection {
     // empty group, return early

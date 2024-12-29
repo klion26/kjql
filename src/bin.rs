@@ -4,17 +4,19 @@ extern crate clap;
 extern crate pest;
 extern crate serde_json;
 
-use std::string::String;
+mod panic;
 
 use anyhow::Result;
 use async_std::{fs, io, path::Path, prelude::*, process::exit};
 use clap::Parser;
 use colored_json::{ColoredFormatter, Paint};
 use kjql::walker;
+use panic::use_custom_panic_hook;
 use serde_json::{
     ser::{CompactFormatter, PrettyFormatter},
     Deserializer, Value,
 };
+use std::string::String;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
@@ -94,7 +96,7 @@ fn render_output(
         .for_each(|value| match value {
             Ok(valid_json) => {
                 // walk through the JSON content with the provided selector.
-                match walker(&valid_json, Some(selectors)) {
+                match walker(&valid_json, selectors) {
                     Ok(selection) => {
                         println!(
                             "{}",
@@ -131,6 +133,8 @@ fn render_output(
 
 #[async_std::main]
 async fn main() -> Result<()> {
+    // use a custom panic hook.
+    use_custom_panic_hook();
     // parse the command
     let args = CommandArgs::parse();
 
@@ -139,6 +143,11 @@ async fn main() -> Result<()> {
         .clone()
         .map_or_else(|| String::from(""), |item| item);
     let selectors = selectors.as_str();
+
+    if "".eq(selectors) {
+        eprintln!("No selectors provided");
+        exit(1);
+    }
 
     // hack here, if the check flag enabled, we use the first arguments as files
     // in normal mode the first is `selector` and the second is `files`
