@@ -72,7 +72,13 @@ fn render_output(
                 exit(0);
             }
             Err(error) => {
-                println!("{}", Paint::red(&format!("Invalid JSON content, error: {}", error)));
+                println!(
+                    "{}",
+                    Paint::red(&format!(
+                        "Invalid JSON content, error: {}",
+                        error
+                    ))
+                );
                 exit(1);
             }
         }
