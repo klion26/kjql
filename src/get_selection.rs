@@ -21,7 +21,7 @@ fn apply_selector(
                 raw_selector,
                 r#"" not found on the parent element"#,
             ]
-            .join(""))
+                .join(""))
         } else {
             Err([
                 r#"Node ""#,
@@ -29,7 +29,7 @@ fn apply_selector(
                 r#"" not found on parent "#,
                 &selectors[map_index - 1].as_str(false),
             ]
-            .join(""))
+                .join(""))
         };
     }
 
@@ -44,7 +44,7 @@ fn object_to_vec(inner_json: &Value) -> Vec<(String, Value)> {
     inner_json_mut
         .as_object_mut()
         .unwrap()
-        .to_owned()
+        .clone()
         .into_iter()
         .collect::<Vec<(String, Value)>>()
 }
@@ -94,7 +94,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                                                 " properties"
                                             },
                                         ]
-                                        .join(""))
+                                            .join(""))
                                     }
                                     None => {
                                         let map = indexes.iter().fold(
@@ -174,7 +174,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                                             " properties"
                                         },
                                     ]
-                                    .join(""));
+                                        .join(""));
                                 }
 
                                 let indexes = if is_default {

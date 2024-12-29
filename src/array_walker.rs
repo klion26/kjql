@@ -10,6 +10,8 @@ pub fn array_walker(
     map_index: usize,
     selector: &[Selector],
 ) -> Result<Value, String> {
+    let is_root = selector.len() == 1 || map_index == 0;
+
     let results: Selections = array_index
         .par_iter()
         .map(|index| {
@@ -20,7 +22,7 @@ pub fn array_walker(
                     // node
                     // or on the root element.
                     Some(array) => {
-                        if selector.len() == 1 {
+                        if is_root {
                             [
                                 "Index [",
                                 index.to_string().as_str(),
@@ -28,7 +30,7 @@ pub fn array_walker(
                                  of ",
                                 &array.len().to_string(),
                             ]
-                            .join("")
+                                .join("")
                         } else {
                             [
                                 "Index [",
@@ -38,20 +40,20 @@ pub fn array_walker(
                                 " has a length of ",
                                 &array.len().to_string(),
                             ]
-                            .join("")
+                                .join("")
                         }
                     }
                     // Trying to acces an index on a node which
                     // is not an arrya.
                     None => {
-                        if selector.len() == 1 || map_index == 0 {
+                        if is_root {
                             String::from("Root element is not an array")
                         } else {
                             [
                                 &selector[map_index - 1].as_str(true),
                                 " is not an array",
                             ]
-                            .join("")
+                                .join("")
                         }
                     }
                 };
