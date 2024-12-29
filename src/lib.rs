@@ -14,6 +14,7 @@ mod tests;
 mod truncate;
 mod types;
 mod utils;
+mod panic;
 
 use crate::types::Selection;
 use serde_json::Value;
