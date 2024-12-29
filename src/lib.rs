@@ -8,13 +8,13 @@ mod core;
 mod flatten_json_array;
 mod get_selection;
 mod group_walker;
+mod panic;
 mod parser;
 mod range_selector;
 mod tests;
 mod truncate;
 mod types;
 mod utils;
-mod panic;
 
 use crate::types::Selection;
 use serde_json::Value;

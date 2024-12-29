@@ -84,7 +84,12 @@ fn render_output(
         }
     }
 
-    Deserializer::from_str(json_content)
+    // Get a deserializer out of the JSON content.
+    let mut deserializer = Deserializer::from_str(json_content);
+    // disable recursion limit. pelease to trace the whole story in https://github.com/yamafaktory/jql/issues/120
+    deserializer.disable_recursion_limit();
+
+    deserializer
         .into_iter::<Value>()
         .for_each(|value| match value {
             Ok(valid_json) => {

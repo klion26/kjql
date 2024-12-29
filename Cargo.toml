@@ -15,7 +15,7 @@ pest = "2.7.15"
 pest_derive = "2.1.0"
 regex = "1.5.4"
 rayon = "1.5.1"
-serde_json = { version = "1.0.134", default-features = false, features = ["preserve_order"] }
+serde_json = { version = "1.0.134", default-features = false, features = ["preserve_order", "unbounded_depth"] }
 colored_json = { version = "5.0.0", optional = true }
 toml = "0.8.19"
 

@@ -11,7 +11,9 @@ pub fn use_custom_panic_hook() {
         let panic_message = panic_info.to_string();
 
         // Exit on broken pipe message.
-        if panic_message.contains("Broken pipe") || panic_message.contains("os error 32") {
+        if panic_message.contains("Broken pipe")
+            || panic_message.contains("os error 32")
+        {
             exit(0);
         }
 
