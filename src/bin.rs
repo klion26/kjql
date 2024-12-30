@@ -6,6 +6,8 @@ extern crate serde_json;
 
 mod panic;
 
+use std::string::String;
+
 use anyhow::Result;
 use async_std::{fs, io, path::Path, prelude::*, process::exit};
 use clap::Parser;
@@ -16,7 +18,6 @@ use serde_json::{
     ser::{CompactFormatter, PrettyFormatter},
     Deserializer, Value,
 };
-use std::string::String;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = "A json query tool")]
@@ -76,10 +77,7 @@ async fn render_output(json_content: &str, args: &CommandArgs) {
             Err(error) => {
                 println!(
                     "{}",
-                    Paint::red(&format!(
-                        "Invalid JSON content, error: {}",
-                        error
-                    ))
+                    Paint::red(&format!("Invalid JSON content, error: {}", error))
                 );
                 exit(1);
             }
@@ -127,7 +125,8 @@ async fn render_output(json_content: &str, args: &CommandArgs) {
                                     String::from(selection.as_str().unwrap())
                                 } else {
                                     ColoredFormatter::new(PrettyFormatter::new())
-                                        .to_colored_json_auto(&selection).unwrap()
+                                        .to_colored_json_auto(&selection)
+                                        .unwrap()
                                 }
                             })
                         );

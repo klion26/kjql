@@ -16,8 +16,9 @@ mod truncate;
 mod types;
 mod utils;
 
-pub use crate::types::*;
 use serde_json::Value;
+
+pub use crate::types::*;
 
 /// Process a Serde JSON Value based on the provided selectors.
 ///

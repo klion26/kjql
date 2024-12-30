@@ -1,6 +1,7 @@
-use crate::types::{Display, Selection, Selector};
 use rayon::prelude::*;
 use serde_json::{json, Value};
+
+use crate::types::{Display, Selection, Selector};
 
 pub fn range_selector(
     inner_json: &Value,
@@ -52,13 +53,12 @@ pub fn range_selector(
             } else {
                 // Get the normalized slice selection, i.e from end to start.
                 let normalized_range_selection = json!(json_array[end..=start]);
-                let reversed_range_selection: Vec<&Value> =
-                    normalized_range_selection
-                        .as_array()
-                        .unwrap()
-                        .par_iter()
-                        .rev()
-                        .collect();
+                let reversed_range_selection: Vec<&Value> = normalized_range_selection
+                    .as_array()
+                    .unwrap()
+                    .par_iter()
+                    .rev()
+                    .collect();
                 json!(reversed_range_selection)
             })
         }

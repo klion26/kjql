@@ -1,8 +1,9 @@
+use serde_json::Value;
+
 use crate::utils::{
     display_array_selector, display_default_selector, display_index_selector,
     display_object_selector, display_range_selector,
 };
-use serde_json::Value;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Selector {
@@ -40,19 +41,11 @@ impl Display for Selector {
     fn as_str(&self, capitalized: bool) -> String {
         // return the selector as a readable string.
         match self {
-            Selector::Default(value) => {
-                display_default_selector(&value.clone(), capitalized)
-            }
+            Selector::Default(value) => display_default_selector(&value.clone(), capitalized),
             Selector::Array => display_array_selector(capitalized),
-            Selector::Index(index) => {
-                display_index_selector(index, capitalized)
-            }
-            Selector::Object(properties) => {
-                display_object_selector(properties, capitalized)
-            }
-            Selector::Range(range) => {
-                display_range_selector(*range, capitalized)
-            }
+            Selector::Index(index) => display_index_selector(index, capitalized),
+            Selector::Object(properties) => display_object_selector(properties, capitalized),
+            Selector::Range(range) => display_range_selector(*range, capitalized),
         }
     }
 }
@@ -62,13 +55,9 @@ impl Display for InnerObject {
     fn as_str(&self, capitalized: bool) -> String {
         match self {
             InnerObject::Array => display_array_selector(capitalized),
-            InnerObject::Index(indexes) => {
-                display_index_selector(indexes, capitalized)
-            }
+            InnerObject::Index(indexes) => display_index_selector(indexes, capitalized),
             InnerObject::KeyValue(key, _value) => key.to_string(),
-            InnerObject::Range(range) => {
-                display_range_selector(*range, capitalized)
-            }
+            InnerObject::Range(range) => display_range_selector(*range, capitalized),
         }
     }
 }
@@ -105,7 +94,9 @@ impl Group {
 }
 
 impl Default for Group {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[doc(hidden)]

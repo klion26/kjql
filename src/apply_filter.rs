@@ -1,10 +1,11 @@
+use rayon::prelude::*;
+use serde_json::{json, Value};
+
 use crate::{
     get_selection::get_selections,
     types::{ExtendedSelections, MayArray, Selections, Selector},
     InnerObject,
 };
-use rayon::prelude::*;
-use serde_json::{json, Value};
 
 /// gets the lenses from the filter lenses.
 fn get_lenses(filter_lenses: &[Selector]) -> Vec<(&str, Option<&str>)> {
@@ -15,8 +16,7 @@ fn get_lenses(filter_lenses: &[Selector]) -> Vec<(&str, Option<&str>)> {
                 inner_objects
                     .par_iter()
                     .fold_with(Vec::new(), |mut acc, inner_object| {
-                        if let InnerObject::KeyValue(key, value) = inner_object
-                        {
+                        if let InnerObject::KeyValue(key, value) = inner_object {
                             acc.push((key.as_str(), value.as_deref()));
                         }
 
@@ -32,10 +32,7 @@ fn get_lenses(filter_lenses: &[Selector]) -> Vec<(&str, Option<&str>)> {
 }
 
 /// Check if a given key/value pair matches some lenses.
-fn match_lenses(
-    lenses: &[(&str, Option<&str>)],
-    (key, value): (&String, &Value),
-) -> bool {
+fn match_lenses(lenses: &[(&str, Option<&str>)], (key, value): (&String, &Value)) -> bool {
     lenses.iter().any(|(lens_key, lens_value)| {
         match *lens_value {
             // Both key and value.
@@ -43,9 +40,7 @@ fn match_lenses(
                 key == lens_key
                     && match value {
                         Value::String(string) => lens_value == string,
-                        Value::Number(number) => {
-                            lens_value == number.to_string()
-                        }
+                        Value::Number(number) => lens_value == number.to_string(),
                         Value::Null => lens_value == "null",
                         // we don't want to perform any other comparsion for
                         // other primitives.

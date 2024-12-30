@@ -60,10 +60,7 @@ pub fn display_index_selector(indexes: &[usize], capitalized: bool) -> String {
     }
 }
 
-pub fn display_object_selector(
-    properties: &[InnerObject],
-    capitalized: bool,
-) -> String {
+pub fn display_object_selector(properties: &[InnerObject], capitalized: bool) -> String {
     if properties.len() == 1 {
         [
             if capitalized {
@@ -121,17 +118,11 @@ mod tests {
     fn object_selector() {
         assert_eq!(
             "Property {foo}",
-            display_object_selector(
-                &[InnerObject::KeyValue("foo".to_string(), None)],
-                true
-            )
+            display_object_selector(&[InnerObject::KeyValue("foo".to_string(), None)], true)
         );
         assert_eq!(
             "property {foo}",
-            display_object_selector(
-                &[InnerObject::KeyValue("foo".to_string(), None)],
-                false
-            )
+            display_object_selector(&[InnerObject::KeyValue("foo".to_string(), None)], false)
         );
 
         assert_eq!(

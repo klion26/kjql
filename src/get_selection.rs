@@ -1,11 +1,13 @@
+use std::sync::{Arc, Mutex};
+
+use rayon::prelude::*;
+use serde_json::{json, Map, Value};
+
 use crate::{
     array_walker::array_walker,
     range_selector::range_selector,
     types::{Display, InnerObject, Selection, Selections, Selector},
 };
-use rayon::prelude::*;
-use serde_json::{json, Map, Value};
-use std::sync::{Arc, Mutex};
 
 fn apply_selector(
     inner_json: &Value,
@@ -69,14 +71,10 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                                 let key_and_values = object_to_vec(&data);
                                 let properties = key_and_values.len();
                                 let last_index = properties - 1;
-                                match indexes
-                                    .par_iter()
-                                    .find_last(|&&x| x > last_index)
-                                {
+                                match indexes.par_iter().find_last(|&&x| x > last_index) {
                                     Some(index) => {
                                         let reference = if map_index > 0 {
-                                            selectors[map_index - 1]
-                                                .as_str(false)
+                                            selectors[map_index - 1].as_str(false)
                                         } else {
                                             "object".to_string()
                                         };
@@ -102,9 +100,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                                             |mut acc, index| {
                                                 acc.insert(
                                                     index.to_string(),
-                                                    key_and_values[*index]
-                                                        .1
-                                                        .clone(),
+                                                    key_and_values[*index].1.clone(),
                                                 );
                                                 acc
                                             },
@@ -118,9 +114,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
 
                             InnerObject::KeyValue(key, _) => {
                                 let data = data.lock().unwrap();
-                                match apply_selector(
-                                    &data, map_index, key, selectors,
-                                ) {
+                                match apply_selector(&data, map_index, key, selectors) {
                                     Ok(value) => match acc {
                                         Ok(mut current) => {
                                             current
@@ -146,12 +140,9 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                                 let properties = key_and_values.len();
                                 let last_index = properties - 1;
                                 let start_with_default = start.unwrap_or(0);
-                                let end_with_default =
-                                    end.unwrap_or(last_index);
-                                let is_default =
-                                    start_with_default < end_with_default;
-                                if start_with_default > last_index
-                                    || end_with_default > last_index
+                                let end_with_default = end.unwrap_or(last_index);
+                                let is_default = start_with_default < end_with_default;
+                                if start_with_default > last_index || end_with_default > last_index
                                 {
                                     let reference = if map_index > 0 {
                                         selectors[map_index - 1].as_str(false)
@@ -210,9 +201,10 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                         |first, second| {
                             first.and_then(|mut first| {
                                 second.map(|mut second| {
-                                    first.as_object_mut().unwrap().extend(
-                                        second.as_object_mut().unwrap().clone(),
-                                    );
+                                    first
+                                        .as_object_mut()
+                                        .unwrap()
+                                        .extend(second.as_object_mut().unwrap().clone());
                                     first
                                 })
                             })
@@ -221,12 +213,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                 // Default selector
                 Selector::Default(raw_selector) => {
                     let mut data = data.lock().unwrap();
-                    match apply_selector(
-                        &data,
-                        map_index,
-                        raw_selector,
-                        selectors,
-                    ) {
+                    match apply_selector(&data, map_index, raw_selector, selectors) {
                         Ok(ref json) => {
                             *data = json.clone();
                             Ok(json.clone())
@@ -284,8 +271,7 @@ pub fn get_selections(selectors: &[Selector], json: &Value) -> Selections {
                 // Index selector
                 Selector::Index(array_index) => {
                     let mut data = data.lock().unwrap();
-                    match array_walker(array_index, &data, map_index, selectors)
-                    {
+                    match array_walker(array_index, &data, map_index, selectors) {
                         Ok(ref json) => {
                             *data = json.clone();
                             Ok(json.clone())
@@ -432,10 +418,7 @@ mod tests {
     fn test_array_get_selection() {
         assert_eq!(
             Ok(vec![json!(["A", "B", "C", "D", "E"])]),
-            get_selections(
-                &[Selector::Array],
-                &json!(["A", "B", "C", "D", "E"])
-            )
+            get_selections(&[Selector::Array], &json!(["A", "B", "C", "D", "E"]))
         );
     }
 

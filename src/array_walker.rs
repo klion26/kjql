@@ -1,6 +1,7 @@
-use crate::types::{Display, Selections, Selector};
 use rayon::prelude::*;
 use serde_json::{json, Value};
+
+use crate::types::{Display, Selections, Selector};
 
 // walks through a JSON array. Iterate over the indexes of the array, returns
 // a Result of values or an Err early on.
@@ -49,11 +50,7 @@ pub fn array_walker(
                         if is_root {
                             String::from("Root element is not an array")
                         } else {
-                            [
-                                &selector[map_index - 1].as_str(true),
-                                " is not an array",
-                            ]
-                            .join("")
+                            [&selector[map_index - 1].as_str(true), " is not an array"].join("")
                         }
                     }
                 };
@@ -108,12 +105,7 @@ mod tests {
             Err(String::from(
                 "Index [1] is out of bound, root element has a length of 0"
             )),
-            array_walker(
-                &[1],
-                &json!([]),
-                1,
-                &[Selector::Default("foo".to_string())]
-            )
+            array_walker(&[1], &json!([]), 1, &[Selector::Default("foo".to_string())])
         );
 
         assert_eq!(

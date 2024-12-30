@@ -1,13 +1,12 @@
-use crate::{
-    apply_filter::apply_filter, flatten_json_array::flatten_json_array,
-    get_selection::get_selections,
-};
+use serde_json::{json, Value};
 
 use crate::{
+    apply_filter::apply_filter,
+    flatten_json_array::flatten_json_array,
+    get_selection::get_selections,
     truncate::truncate_json,
     types::{Group, MayArray, Selection},
 };
-use serde_json::{json, Value};
 
 // walks through a group
 pub fn group_walker(
@@ -41,29 +40,26 @@ pub fn group_walker(
 
             let is_spreading = spread.is_some();
 
-            let output =
-                match apply_filter(filters, filter_lenses, &output_json) {
-                    Ok(filtered) => match filtered {
-                        MayArray::Array(array) => Ok(if is_spreading {
-                            json!(flatten_json_array(&json!(array)))
+            let output = match apply_filter(filters, filter_lenses, &output_json) {
+                Ok(filtered) => match filtered {
+                    MayArray::Array(array) => Ok(if is_spreading {
+                        json!(flatten_json_array(&json!(array)))
+                    } else {
+                        json!(array)
+                    }),
+                    MayArray::NonArray(single_value) => {
+                        if is_spreading {
+                            Err(String::from("Only array can be flattened."))
                         } else {
-                            json!(array)
-                        }),
-                        MayArray::NonArray(single_value) => {
-                            if is_spreading {
-                                Err(String::from(
-                                    "Only array can be flattened.",
-                                ))
-                            } else {
-                                // we know that we are holding a single value
-                                // wrapped inside a MaybeArray::NoArray enum.
-                                // we need to pick the first item of the vector.
-                                Ok(json!(single_value[0]))
-                            }
+                            // we know that we are holding a single value
+                            // wrapped inside a MaybeArray::NoArray enum.
+                            // we need to pick the first item of the vector.
+                            Ok(json!(single_value[0]))
                         }
-                    },
-                    Err(error) => Err(error),
-                };
+                    }
+                },
+                Err(error) => Err(error),
+            };
             match truncate {
                 Some(_) => match output {
                     Ok(value) => Ok(truncate_json(value)),

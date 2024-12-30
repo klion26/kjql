@@ -1,6 +1,7 @@
-use crate::types::{Group, InnerObject, Selector};
 use pest::{iterators as pest_iterators, Parser};
 use pest_derive::*;
+
+use crate::types::{Group, InnerObject, Selector};
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
@@ -13,17 +14,13 @@ fn span_to_default(inner_span: &str) -> Selector {
     Selector::Default(inner_span.replace(r#"\""#, r#"""#))
 }
 
-fn get_start_and_end_from_pair(
-    pair: PestPair,
-) -> (Option<PestPair<'_>>, Option<PestPair<'_>>) {
+fn get_start_and_end_from_pair(pair: PestPair) -> (Option<PestPair<'_>>, Option<PestPair<'_>>) {
     pair.into_inner().fold(
         (None, None),
-        |acc: (Option<PestPair<'_>>, Option<PestPair<'_>>), inner_pair| {
-            match inner_pair.as_rule() {
-                Rule::start => (Some(inner_pair.clone()), acc.1),
-                Rule::end => (acc.0, Some(inner_pair.clone())),
-                _ => (acc.0, acc.1),
-            }
+        |acc: (Option<PestPair<'_>>, Option<PestPair<'_>>), inner_pair| match inner_pair.as_rule() {
+            Rule::start => (Some(inner_pair.clone()), acc.1),
+            Rule::end => (acc.0, Some(inner_pair.clone())),
+            _ => (acc.0, acc.1),
         },
     )
 }
@@ -85,9 +82,8 @@ fn get_chars_from_pair(pair: PestPair<'_>) -> Vec<String> {
 
 // return a vector of nested chars found inside a given pair.
 fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
-    pair.into_inner().fold(
-        Vec::new(),
-        |mut acc: Vec<InnerObject>, inner_pair| {
+    pair.into_inner()
+        .fold(Vec::new(), |mut acc: Vec<InnerObject>, inner_pair| {
             match inner_pair.as_rule() {
                 Rule::default => {
                     acc.push(InnerObject::KeyValue(
@@ -107,18 +103,11 @@ fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
                             .unwrap(),
                     )[0];
 
-                    let maybe_value =
-                        inner_pair.into_inner().nth(1).map(|pair| {
-                            get_chars_from_pair(
-                                pair.into_inner().next().unwrap(),
-                            )[0]
-                            .clone()
-                        });
+                    let maybe_value = inner_pair.into_inner().nth(1).map(|pair| {
+                        get_chars_from_pair(pair.into_inner().next().unwrap())[0].clone()
+                    });
 
-                    acc.push(InnerObject::KeyValue(
-                        key.to_string(),
-                        maybe_value,
-                    ));
+                    acc.push(InnerObject::KeyValue(key.to_string(), maybe_value));
                 }
                 Rule::object_range => {
                     acc.push(span_to_object_range(
@@ -126,15 +115,12 @@ fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
                     ));
                 }
                 Rule::object_index => {
-                    acc.push(span_to_object_index(
-                        inner_pair.as_span().as_str(),
-                    ));
+                    acc.push(span_to_object_index(inner_pair.as_span().as_str()));
                 }
                 _ => {}
             }
             acc
-        },
-    )
+        })
 }
 
 pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
@@ -151,53 +137,39 @@ pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
                     // populate the group based on the rules fond by the parser.
                     match inner_pair.as_rule() {
                         // Default
-                        Rule::default => group.selectors.push(span_to_default(
-                            &get_chars_from_pair(inner_pair)[0],
-                        )),
+                        Rule::default => group
+                            .selectors
+                            .push(span_to_default(&get_chars_from_pair(inner_pair)[0])),
                         Rule::filter_default => {
                             group.filters.push(span_to_default(
                                 // filter_default will reuse default
                                 // we need to unfold to the inner_pair here
-                                &get_chars_from_pair(
-                                    inner_pair.into_inner().next().unwrap(),
-                                )[0],
+                                &get_chars_from_pair(inner_pair.into_inner().next().unwrap())[0],
                             ))
                         }
                         // index
-                        Rule::index => {
-                            group.selectors.push(span_to_index(inner_span))
-                        }
-                        Rule::filter_index => {
-                            group.filters.push(span_to_index(inner_span))
-                        }
+                        Rule::index => group.selectors.push(span_to_index(inner_span)),
+                        Rule::filter_index => group.filters.push(span_to_index(inner_span)),
                         // range
-                        Rule::range => {
-                            group.selectors.push(span_to_range(inner_pair))
-                        }
+                        Rule::range => group.selectors.push(span_to_range(inner_pair)),
                         Rule::filter_range => {
                             // filter_range will reuse range
                             // we need to unfold to the inner_pair here
-                            group.filters.push(span_to_range(
-                                inner_pair.into_inner().next().unwrap(),
-                            ))
+                            group
+                                .filters
+                                .push(span_to_range(inner_pair.into_inner().next().unwrap()))
                         }
                         // property
-                        Rule::property => {
-                            group.selectors.push(Selector::Object(
-                                get_inner_object_from_pair(inner_pair),
-                            ))
-                        }
-                        Rule::filter_property => {
-                            group.filters.push(Selector::Object(
-                                get_inner_object_from_pair(inner_pair),
-                            ))
-                        }
+                        Rule::property => group
+                            .selectors
+                            .push(Selector::Object(get_inner_object_from_pair(inner_pair))),
+                        Rule::filter_property => group
+                            .filters
+                            .push(Selector::Object(get_inner_object_from_pair(inner_pair))),
                         // filter lenses property.
-                        Rule::filter_lens_key_value => {
-                            group.filter_lenses.push(Selector::Object(
-                                get_inner_object_from_pair(inner_pair),
-                            ))
-                        }
+                        Rule::filter_lens_key_value => group
+                            .filter_lenses
+                            .push(Selector::Object(get_inner_object_from_pair(inner_pair))),
                         // root
                         Rule::root => group.root = Some(()),
                         // spread
@@ -205,9 +177,7 @@ pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
                         // truncate
                         Rule::truncate => group.truncate = Some(()),
                         _ => {
-                            println!(
-                                "Error, unable to parse invalid selectors"
-                            );
+                            println!("Error, unable to parse invalid selectors");
                             todo!()
                         }
                     };

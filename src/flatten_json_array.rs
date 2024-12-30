@@ -10,9 +10,7 @@ pub fn flatten_json_array(value: &Value) -> Value {
             if inner_value.is_array() {
                 let recursive_value = flatten_json_array(inner_value);
                 if recursive_value.is_array() {
-                    acc.append(
-                        &mut recursive_value.as_array().unwrap().clone(),
-                    );
+                    acc.append(&mut recursive_value.as_array().unwrap().clone());
                 } else {
                     acc.push(inner_value.clone());
                 }
