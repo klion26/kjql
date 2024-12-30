@@ -30,7 +30,7 @@ pub fn array_walker(
                                  of ",
                                 &array.len().to_string(),
                             ]
-                                .join("")
+                            .join("")
                         } else {
                             [
                                 "Index [",
@@ -40,7 +40,7 @@ pub fn array_walker(
                                 " has a length of ",
                                 &array.len().to_string(),
                             ]
-                                .join("")
+                            .join("")
                         }
                     }
                     // Trying to acces an index on a node which
@@ -53,7 +53,7 @@ pub fn array_walker(
                                 &selector[map_index - 1].as_str(true),
                                 " is not an array",
                             ]
-                                .join("")
+                            .join("")
                         }
                     }
                 };

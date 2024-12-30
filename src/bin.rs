@@ -25,10 +25,9 @@ pub struct CommandArgs {
         short,
         long,
         required = false,
-        index = 2,
         help = "The JSON file to query, will read from stdin if not given"
     )]
-    file: Option<String>,
+    json: Option<String>,
     #[arg(short, long, default_value = "false")]
     pretty: bool,
     #[arg(short, long, conflicts_with = "check", help = "Inlines JSON output")]
@@ -53,21 +52,22 @@ pub struct CommandArgs {
     check: bool,
     #[arg(
         index = 1,
-        required_unless_present = "check",
+        required_unless_present_any = ["check", "from_file"],
         help = "The JSON selector to query the JSON content"
     )]
     selector: Option<String>,
+    #[arg(
+        short,
+        long,
+        conflicts_with = "check",
+        help = "Reads selector from file than from a command argument"
+    )]
+    from_file: Option<String>,
 }
 
 /// Try to serialize the raw JSON content, output selection or throw an error.
-fn render_output(
-    json_content: &str,
-    inline: bool,
-    selectors: &str,
-    raw_output: bool,
-    check: bool,
-) {
-    if check {
+async fn render_output(json_content: &str, args: &CommandArgs) {
+    if args.check {
         match serde_json::from_str::<Value>(json_content) {
             Ok(_) => {
                 println!("{}", Paint::green("Valid JSON content!"));
@@ -91,17 +91,33 @@ fn render_output(
     // disable recursion limit. pelease to trace the whole story in https://github.com/yamafaktory/jql/issues/120
     deserializer.disable_recursion_limit();
 
+    let selectors: String = match args.from_file.clone() {
+        Some(selector_file) => {
+            let path = Path::new(selector_file.as_str());
+            let contents = fs::read_to_string(path).await;
+            match contents {
+                Ok(selectors) => selectors,
+                Err(error) => {
+                    eprintln!("{}", error);
+                    exit(1);
+                }
+            }
+        }
+        None => {
+            args.selector.clone().unwrap()
+        }
+    };
     deserializer
         .into_iter::<Value>()
         .for_each(|value| match value {
             Ok(valid_json) => {
                 // walk through the JSON content with the provided selector.
-                match walker(&valid_json, selectors) {
+                match walker(&valid_json, selectors.as_str()) {
                     Ok(selection) => {
                         println!(
                             "{}",
                             // Inline or pretty output
-                            (if inline {
+                            (if args.inline {
                                 ColoredFormatter::new(CompactFormatter {})
                                     .to_colored_json_auto(&selection)
                                     .unwrap()
@@ -109,7 +125,7 @@ fn render_output(
                                 // if the selection is a string and the raw-output
                                 // flat is passed, directly return the raw string
                                 // without JSON double-quotes.
-                                if raw_output && selection.is_string() {
+                                if args.raw_output && selection.is_string() {
                                     String::from(selection.as_str().unwrap())
                                 } else {
                                     ColoredFormatter::new(PrettyFormatter::new())
@@ -138,31 +154,23 @@ async fn main() -> Result<()> {
     // parse the command
     let args = CommandArgs::parse();
 
-    let selectors: String = args
-        .selector
-        .clone()
-        .map_or_else(|| String::from(""), |item| item);
-    let selectors = selectors.as_str();
-
-    if "".eq(selectors) {
+    if args.from_file.is_none() && args.selector.is_none() {
         eprintln!("No selectors provided");
         exit(1);
     }
 
     // hack here, if the check flag enabled, we use the first arguments as files
     // in normal mode the first is `selector` and the second is `files`
-    match if args.check { args.selector } else { args.file } {
+    match if args.check {
+        args.selector.clone()
+    } else {
+        args.json.clone()
+    } {
         Some(file) => {
             let path = Path::new(&file);
 
             let contents = fs::read_to_string(path).await?;
-            render_output(
-                &contents,
-                args.inline,
-                selectors,
-                args.raw_output,
-                args.check,
-            );
+            render_output(&contents, &args).await;
             Ok(())
         }
         // JSON content coming from stdin.
@@ -182,26 +190,14 @@ async fn main() -> Result<()> {
                     // check for the EOF.
                     if n == 0 {
                         if !stream {
-                            render_output(
-                                &line,
-                                args.inline,
-                                selectors,
-                                args.raw_output,
-                                args.check,
-                            );
+                            render_output(&line, &args).await;
                         }
 
                         return Ok(());
                     }
 
                     // render every line for the stream option.
-                    render_output(
-                        &line,
-                        args.inline,
-                        selectors,
-                        args.raw_output,
-                        args.check,
-                    );
+                    render_output(&line, &args).await;
                     stdout.flush().await?;
                     line.resetting();
                 }
@@ -212,13 +208,7 @@ async fn main() -> Result<()> {
             stdin.read_to_end(&mut buffer).await?;
             match String::from_utf8(buffer) {
                 Ok(lines) => {
-                    render_output(
-                        &lines,
-                        args.inline,
-                        selectors,
-                        args.raw_output,
-                        args.check,
-                    );
+                    render_output(&lines, &args).await;
                     Ok(())
                 }
                 Err(error) => {
