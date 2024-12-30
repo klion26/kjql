@@ -81,6 +81,12 @@ mod tests {
           {"gamma": 3, "delta": "something" },
           {"alpha": 7},
           {"delta": 4}
+       ],
+       "lenses-filter": [
+           {"alpha": 1, "shared": "a"},
+           {"beta": 2, "shared": "b"},
+           {"gamma": 3, "shared": "c"},
+           {"delta": 4, "shared": "d"}
        ]
     }
     "#;
@@ -681,8 +687,8 @@ mod tests {
                 "array": [],
                 "empty-array": [],
                 "nested": {},
-                "null": null,
                 "number": 1337,
+                "null": null,
                 "text": "some text",
                 ".property..": "This is valid JSON!",
                 "\"": "This is valid JSON as well",
@@ -694,6 +700,7 @@ mod tests {
                 "nested-filter": [],
                 "filter-to-flatten": [],
                 "nested-filter-to-flatten": [],
+                "lenses": []
             })),
             walker(&json, selector)
         );
@@ -917,5 +924,13 @@ mod tests {
             ),
             walker(&json, selector_key_value_multiple)
         );
+    }
+
+    #[test]
+    fn check_lens_with_filter() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+        let selector = r#""lenses-filter"|={"delta","alpha"}|"shared""#;
+
+        assert_eq!(Ok(json!(["a", "d"])), walker(&json, selector))
     }
 }

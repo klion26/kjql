@@ -42,15 +42,15 @@ fn match_lenses(
             Some(lens_value) => {
                 key == lens_key
                     && match value {
-                    Value::String(string) => lens_value == string,
-                    Value::Number(number) => {
-                        lens_value == number.to_string()
+                        Value::String(string) => lens_value == string,
+                        Value::Number(number) => {
+                            lens_value == number.to_string()
+                        }
+                        Value::Null => lens_value == "null",
+                        // we don't want to perform any other comparsion for
+                        // other primitives.
+                        _ => false,
                     }
-                    Value::Null => lens_value == "null",
-                    // we don't want to perform any other comparsion for
-                    // other primitives.
-                    _ => false,
-                }
             }
 
             // Based on the key only.
@@ -73,36 +73,23 @@ pub fn apply_filter(
             let selections: Vec<Selections> = array
                 .par_iter()
                 .cloned()
-                .map(|partial_json| -> Selections {
+                .filter(|partial_json| {
                     // check whether we have some lenses or not.
-                    if !lenses.is_empty() {
+                    // and if this is
+                    // an object since lenses can only by applied to objects.
+                    if !lenses.is_empty() && partial_json.is_object() {
                         // Lenses can only be applied to JSON objects.
-                        if partial_json.is_object() {
-                            let object = partial_json.as_object().unwrap();
+                        // based on the conditional above.
+                        let object = partial_json.as_object().unwrap();
 
-                            let matches = object.iter().fold(
-                                Vec::with_capacity(object.len()),
-                                |mut acc, key_value| {
-                                    // push to the map if we have a matching
-                                    // lens
-                                    if match_lenses(&lenses, key_value) {
-                                        acc.push(partial_json.clone())
-                                    }
-                                    acc
-                                },
-                            );
-
-                            // avoid returning an empty map if no match has been
-                            // found.
-                            if matches.is_empty() {
-                                return Ok(vec![]);
-                            }
-
-                            return Ok(matches);
-                        }
-
-                        return Ok(vec![partial_json]);
+                        object
+                            .iter()
+                            .any(|key_value| match_lenses(&lenses, key_value))
+                    } else {
+                        true
                     }
+                })
+                .map(|partial_json| -> Selections {
                     if filter_selectors.is_empty() {
                         Ok(vec![partial_json])
                     } else {

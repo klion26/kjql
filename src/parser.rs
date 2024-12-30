@@ -108,14 +108,12 @@ fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
                     )[0];
 
                     let maybe_value =
-                        inner_pair.into_inner().nth(1).map(
-                            |pair| {
-                                get_chars_from_pair(
-                                    pair.into_inner().next().unwrap(),
-                                )[0]
-                                    .clone()
-                            },
-                        );
+                        inner_pair.into_inner().nth(1).map(|pair| {
+                            get_chars_from_pair(
+                                pair.into_inner().next().unwrap(),
+                            )[0]
+                            .clone()
+                        });
 
                     acc.push(InnerObject::KeyValue(
                         key.to_string(),

@@ -45,6 +45,7 @@ pub fn walker(json: &Value, selectors: &str) -> Selection {
 ///         &json_array,
 ///         &[Group {
 ///             filters: vec![],
+///             filter_lenses: vec![],
 ///             root: None,
 ///             selectors: vec![Index(vec![4])],
 ///             spread: None,
