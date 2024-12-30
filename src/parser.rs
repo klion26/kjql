@@ -165,6 +165,12 @@ pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
                                 get_inner_object_from_pair(inner_pair),
                             ))
                         }
+                        // filter lenses property.
+                        Rule::filter_lens_property => {
+                            group.filter_lenses.push(Selector::Object(
+                                get_inner_object_from_pair(inner_pair),
+                            ))
+                        }
                         // root
                         Rule::root => group.root = Some(()),
                         // spread

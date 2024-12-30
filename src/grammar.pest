@@ -40,7 +40,9 @@ filter_object = _{ "{" ~ filter_property ~ "}" }
 filter_range = { range }
 filter_index = { index }
 filter_array = _{ "[" ~ (filter_range | filter_index) ~ "]"}
-filter = _{ filter_array | filter_object | filter_default }
+filter_lens_property = { default ~ ("," ~ default)*}
+filter_lens = _{ "=" ~ "{" ~ filter_lens_property ~ "}"}
+filter = _{ filter_array | filter_object | filter_default | filter_lens }
 
 filters = _ { pipe ~ filter ~ ("."? ~ filter)* }
 

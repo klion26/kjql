@@ -103,9 +103,7 @@ async fn render_output(json_content: &str, args: &CommandArgs) {
                 }
             }
         }
-        None => {
-            args.selector.clone().unwrap()
-        }
+        None => args.selector.clone().unwrap(),
     };
     deserializer
         .into_iter::<Value>()

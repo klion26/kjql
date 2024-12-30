@@ -74,6 +74,13 @@ mod tests {
                    "dna": [[[[["c", "a", "c"]]]], "g","t", [[["a", ["t"]]]]]
                 }
            }
+       ],
+       "lenses": [
+          {"alpha": 1},
+          {"beta": 2},
+          {"gamma": 3},
+          {"alpha": 7},
+          {"delta": 4}
        ]
     }
     "#;
@@ -867,6 +874,17 @@ mod tests {
             Err(String::from(
                 r#"Range [1:3] is out of bound, object contains 1 property"#
             )),
+            walker(&json, selector)
+        );
+    }
+
+    #[test]
+    fn check_lenses() {
+        let json: Value = serde_json::from_str(DATA).unwrap();
+
+        let selector = r#""lenses"|={"delta", "alpha"}"#;
+        assert_eq!(
+            Ok(json!([{"alpha": 1}, {"alpha": 7}, {"delta": 4}])),
             walker(&json, selector)
         );
     }
