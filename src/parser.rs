@@ -73,7 +73,7 @@ fn span_to_object_range(pair: PestPair<'_>) -> InnerObject {
 }
 
 // return a vector of chars found inside a default pair.
-fn get_chars_from_default_pair(pair: PestPair<'_>) -> Vec<String> {
+fn get_chars_from_pair(pair: PestPair<'_>) -> Vec<String> {
     pair.into_inner()
         .fold(Vec::new(), |mut acc: Vec<String>, inner_pair| {
             if inner_pair.as_rule() == Rule::chars {
@@ -90,8 +90,36 @@ fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
         |mut acc: Vec<InnerObject>, inner_pair| {
             match inner_pair.as_rule() {
                 Rule::default => {
-                    acc.push(InnerObject::Key(
-                        get_chars_from_default_pair(inner_pair)[0].clone(),
+                    acc.push(InnerObject::KeyValue(
+                        get_chars_from_pair(inner_pair)[0].clone(),
+                        None,
+                    ));
+                }
+                Rule::filter_lens_key_value_pair => {
+                    let key = &get_chars_from_pair(
+                        inner_pair
+                            .clone()
+                            .into_inner()
+                            .next()
+                            .unwrap()
+                            .into_inner()
+                            .next()
+                            .unwrap(),
+                    )[0];
+
+                    let maybe_value =
+                        inner_pair.into_inner().nth(1).map(
+                            |pair| {
+                                get_chars_from_pair(
+                                    pair.into_inner().next().unwrap(),
+                                )[0]
+                                    .clone()
+                            },
+                        );
+
+                    acc.push(InnerObject::KeyValue(
+                        key.to_string(),
+                        maybe_value,
                     ));
                 }
                 Rule::object_range => {
@@ -110,6 +138,7 @@ fn get_inner_object_from_pair(pair: PestPair<'_>) -> Vec<InnerObject> {
         },
     )
 }
+
 pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
     println!("input for selectgor_parser : [{:?}]", selectors);
     match GroupsParser::parse(Rule::groups, selectors) {
@@ -125,13 +154,13 @@ pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
                     match inner_pair.as_rule() {
                         // Default
                         Rule::default => group.selectors.push(span_to_default(
-                            &get_chars_from_default_pair(inner_pair)[0],
+                            &get_chars_from_pair(inner_pair)[0],
                         )),
                         Rule::filter_default => {
                             group.filters.push(span_to_default(
                                 // filter_default will reuse default
                                 // we need to unfold to the inner_pair here
-                                &get_chars_from_default_pair(
+                                &get_chars_from_pair(
                                     inner_pair.into_inner().next().unwrap(),
                                 )[0],
                             ))
@@ -166,7 +195,7 @@ pub fn selectors_parser(selectors: &str) -> Result<Vec<Group>, String> {
                             ))
                         }
                         // filter lenses property.
-                        Rule::filter_lens_property => {
+                        Rule::filter_lens_key_value => {
                             group.filter_lenses.push(Selector::Object(
                                 get_inner_object_from_pair(inner_pair),
                             ))
