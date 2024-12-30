@@ -100,7 +100,7 @@ impl Default for Group {
 }
 
 #[doc(hidden)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MayArray {
     Array(Vec<Value>),
     NonArray(Vec<Value>),

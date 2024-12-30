@@ -687,7 +687,8 @@ mod tests {
                 "nested-filter": [],
                 "filter-to-flatten": [],
                 "nested-filter-to-flatten": [],
-                "lenses": []
+                "lenses": [],
+                "lenses-filter": []
             })),
             walker(&json, selector)
         );
