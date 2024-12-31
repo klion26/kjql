@@ -6,6 +6,7 @@ mod apply_filter;
 mod array_walker;
 mod core;
 mod flatten_json_array;
+mod flatten_json_object;
 mod get_selection;
 mod group_walker;
 mod panic;
