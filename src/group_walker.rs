@@ -12,7 +12,6 @@ use crate::{
 pub fn group_walker(
     Group {
         filters,
-        filter_lenses,
         root,
         selectors,
         spread,
@@ -40,7 +39,7 @@ pub fn group_walker(
 
             let is_spreading = spread.is_some();
 
-            let output = match apply_filter(filters, filter_lenses, &output_json) {
+            let output = match apply_filter(filters, &output_json) {
                 Ok(filtered) => match filtered {
                     MayArray::Array(array) => Ok(if is_spreading {
                         json!(flatten_json_array(&json!(array)))

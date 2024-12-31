@@ -5,7 +5,17 @@ use crate::utils::{
     display_object_selector, display_range_selector,
 };
 
+/// Filters.
 #[derive(Debug, PartialEq, Eq)]
+pub enum Filter {
+    /// Default variant.
+    Default(Selector),
+    /// Lens variant.
+    Lens(Selector),
+}
+
+/// Selectors.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Selector {
     /// Default variant.
     Default(String),
@@ -20,7 +30,7 @@ pub enum Selector {
 }
 
 /// Inner objects.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InnerObject {
     /// Array variant
     Array,
@@ -65,9 +75,7 @@ impl Display for InnerObject {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Group {
     /// filters.
-    pub filters: Vec<Selector>,
-    /// filter lenses.
-    pub filter_lenses: Vec<Selector>,
+    pub filters: Vec<Filter>,
     /// root marker.
     pub root: Option<()>,
     /// selectors.
@@ -84,7 +92,6 @@ impl Group {
     pub fn new() -> Self {
         Self {
             filters: Vec::new(),
-            filter_lenses: Vec::new(),
             root: None,
             selectors: Vec::new(),
             spread: None,

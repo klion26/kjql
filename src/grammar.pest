@@ -43,9 +43,8 @@ filter_array = _{ "[" ~ (filter_range | filter_index) ~ "]"}
 filter_lens = _{ "=" ~ "{" ~ filter_lens_property ~ "}"}
 filter_lens_key = { default }
 filter_lens_value = { default}
-filter_lens_key_value_pair = { filter_lens_key ~ (":" ~ filter_lens_value)? }
-filter_lens_key_value = { filter_lens_key_value_pair }
-filter_lens_property = _{ filter_lens_key_value ~ ("," ~ filter_lens_key_value)*}
+filter_lens_key_value = { filter_lens_key ~ (":" ~ filter_lens_value)? }
+filter_lens_property = { filter_lens_key_value ~ ("," ~ filter_lens_key_value)*}
 filter = _{ filter_array | filter_object | filter_default | filter_lens }
 
 filters = _ { pipe ~ filter ~ ("."? ~ filter)* }
