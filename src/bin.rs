@@ -69,7 +69,7 @@ pub struct CommandArgs {
 /// Try to serialize the raw JSON content, output selection or throw an error.
 async fn render_output(json_content: &str, args: &CommandArgs) {
     if args.check {
-        match serde_json::from_str::<Value>(json_content) {
+        match serde_json::from_str::<Value>(json_content).is_ok() {
             Ok(_) => {
                 println!("{}", Paint::green("Valid JSON content!"));
                 exit(0);
