@@ -1,6 +1,7 @@
-use std::panic;
-
-use async_std::process::exit;
+use std::{
+    panic,
+    process::exit,
+};
 
 /// Use a custom hook to manage broken pipe errros.
 pub fn use_custom_panic_hook() {

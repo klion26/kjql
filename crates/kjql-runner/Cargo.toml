@@ -1,0 +1,28 @@
+[package]
+authors = { workspace = true }
+categories = { workspace = true }
+description = "Runner for kjql -- the JSON Query Language"
+edition = { workspace = true }
+keywords = { workspace = true }
+license = { workspace = true }
+name = "kjql-runner"
+readme = { workspace = true }
+repository = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+kjql-parser = { path = "../kjql-parser" }
+rayon = "1.10.0"
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.4.0"
+
+[lib]
+path = "src/lib.rs"
+
+[[bench]]
+harness = false
+name = "benchmark"
+path = "benches/benchmark.rs"

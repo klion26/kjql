@@ -1,40 +1,22 @@
-[package]
-name = "kjql"
-version = "1.0.0"
+[workspace]
+resolver = "2"
+members = [
+    "crates/*"
+]
+
+[workspace.dependencies]
+thiserror = "2.0.9"
+serde_json = { version = "1.0.134", features = ["preserve_order", "unbounded_depth"] }
+
+[workspace.package]
+authors = ["klion26 <klion26@apache.og>"]
+categories = ["command-line-utilities", "json"]
 edition = "2021"
-authors = ["klion26 <klion26@apache.org>"]
-exclude = ["rustfmt.toml", "benchs/**/*"]
-[dev-dependencies]
-criterion = "0.5.1"
-
-[dependencies]
-anyhow = "1.0.40"
-async-std = { version = "1.13.0", features = ["attributes", "unstable"], optional = true }
-clap = { version = "4.5.4", features = ["derive", "cargo"], optional = true }
-pest = "2.7.15"
-pest_derive = "2.1.0"
-regex = "1.5.4"
-rayon = "1.5.1"
-serde_json = { version = "1.0.134", default-features = false, features = ["preserve_order", "unbounded_depth"] }
-colored_json = { version = "5.0.0", optional = true }
-toml = "0.8.19"
-
-[features]
-default = ["clap", "colored_json", "async-std"]
-
-[[bench]]
-name = "benchmark"
-harness = false
-path = "benches/benchmark.rs"
-
-[lib]
-name = "kjql"
-path = "src/lib.rs"
-
-[[bin]]
-name = "kjql"
-path = "src/bin.rs"
-required-features = ["clap", "colored_json"]
+keywords = ["cli", "json", "tool"]
+readme = "README.md"
+repository = "https://github.com/klion26/kjql"
+version = "2.0.0"
+license = "Apache-2.0"
 
 [profile.release]
 codegen-units = 1
