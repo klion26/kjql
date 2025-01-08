@@ -43,6 +43,9 @@ fn get_array_index(index: Index, json: &Value) -> Result<Value, KjqlRunnerError>
 /// Takes a slice of `Index` and a reference of a JSON `Value`.
 /// Returns a refernece of a JSON `Value` or an error.
 pub(crate) fn get_array_indexes(indexes: &[Index], json: &Value) -> Result<Value, KjqlRunnerError> {
+    if indexes.len() == 1 {
+        return get_array_index(indexes[0], json);
+    }
     let values: Vec<Value> = indexes
         .iter()
         .try_fold(vec![], |mut acc: Vec<Value>, index| {
@@ -208,6 +211,7 @@ mod tests {
     fn check_get_array_indexes() {
         let value = json!(["a", "b", "c"]);
 
+        assert_eq!(Ok(json!("a")), get_array_indexes(&[Index::new(0)], &value));
         assert_eq!(
             get_array_indexes(&[Index::new(0), Index::new(2)], &value),
             Ok(json!(["a", "c"]))
