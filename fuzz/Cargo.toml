@@ -1,0 +1,27 @@
+[package]
+name = "kjql-parser-fuzz"
+publish = false
+version = "0.1.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.8"
+
+[dependencies.kjql-parser]
+path = "../crates/kjql-parser"
+
+# prevent this from interfering with hworkspaces.
+[workspace]
+members = ["."]
+edition = "2021"
+
+[profile.release]
+debug = 1
+
+[[bin]]
+doc = false
+name = "fuzz_parser"
+path = "fuzz_targets/fuzz_parser.rs"
+test = false
