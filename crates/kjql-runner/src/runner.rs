@@ -75,7 +75,7 @@ pub fn token(tokens: &[Token], json: &Value) -> Result<Value, KjqlRunnerError> {
 /// Returns a JSON `Value` or an error.
 /// Note: The `GroupSeparator` enum variant is unreachable at this point since
 /// it has been filtered out by any of the public `runner` functions.
-fn group_runner(tokens: &[&Token], json: &Value) -> Result<Value, KjqlRunnerError> {
+pub fn group_runner(tokens: &[&Token], json: &Value) -> Result<Value, KjqlRunnerError> {
     tokens
         .iter()
         // at this lever we can use rayon since every token is applied sequentially.as
@@ -254,9 +254,24 @@ mod tests {
                         Token::TruncateOperator,
                         Token::KeySelector("b")
                     ]
-                    .stringify(),
+                        .stringify(),
                 )
             ))
         );
+    }
+
+    #[test]
+    fn check_runner_lens() {
+        let value = json!([
+            { "a": { "b": {"c": 1}}},
+            { "a": { "b": {"c": 2}}},
+        ]);
+
+        assert_eq!(
+            Ok(json!([
+                {"a": {"b": {"c": 2}}}
+            ])),
+            raw(r#"|={"a""b""c"=2}"#, &value)
+        )
     }
 }

@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/kjql/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/kjql-parser/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/kjql-runner/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/fuzz/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

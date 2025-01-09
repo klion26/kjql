@@ -5,6 +5,7 @@ use kjql_parser::tokens::{
     Lens,
     LensValue,
     Range,
+    Token,
 };
 use rayon::prelude::*;
 use serde_json::{
@@ -12,7 +13,10 @@ use serde_json::{
     Value,
 };
 
-use crate::errors::KjqlRunnerError;
+use crate::{
+    errors::KjqlRunnerError,
+    runner::group_runner,
+};
 
 /// Takes a mutable reference of JSON `Value` and returns a reference of a
 /// mutable vector of JSON `Value` or an error.
@@ -133,34 +137,30 @@ pub(crate) fn get_array_lenses(
     let result = array
         .par_iter()
         .try_fold_with(Vec::new(), |mut acc: Vec<Value>, inner_value| {
-            if let Some(object) = inner_value.as_object() {
-                if lenses.iter().any(|lens| {
-                    let (key, value) = lens.get();
+            if lenses.iter().any(|lens| {
+                let (tokens, value) = lens.get();
 
-                    if let Some((current_key, current_value)) = object.get_key_value(key) {
-                        match value {
-                            Some(LensValue::Bool(boolean)) => {
-                                current_key == key
-                                    && current_value.is_boolean()
-                                    && current_value.as_bool().unwrap() == boolean
-                            }
-                            Some(LensValue::Null) => current_key == key && current_value.is_null(),
-                            Some(LensValue::Number(value)) => {
-                                current_key == key
-                                    && current_value.is_u64()
-                                    && current_value.as_u64().unwrap() == value as u64
-                            }
-                            Some(LensValue::String(value)) => {
-                                current_key == key && current_value == value
-                            }
-                            None => current_key == key,
+                let tokens: Vec<&Token> = tokens.iter().collect();
+                let result = group_runner(&tokens, inner_value);
+                if let Ok(current_value) = result {
+                    match value {
+                        Some(LensValue::Bool(boolean)) => {
+                            current_value.is_boolean()
+                                && current_value.as_bool().unwrap() == boolean
                         }
-                    } else {
-                        false
+                        Some(LensValue::Null) => current_value.is_null(),
+                        Some(LensValue::Number(value)) => {
+                            current_value.is_u64()
+                                && current_value.as_u64().unwrap() == value as u64
+                        }
+                        Some(LensValue::String(value)) => current_value == value,
+                        None => true,
                     }
-                }) {
-                    acc.push(inner_value.clone());
+                } else {
+                    false
                 }
+            }) {
+                acc.push(inner_value.clone());
             }
 
             Ok::<Vec<Value>, KjqlRunnerError>(acc)
@@ -181,6 +181,7 @@ mod tests {
         Lens,
         LensValue,
         Range,
+        Token,
     };
     use serde_json::json;
 
@@ -305,11 +306,17 @@ mod tests {
                ]);
 
         assert_eq!(
-            get_array_lenses(&[Lens::new("a", None)], &mut json!([])),
+            get_array_lenses(
+                &[Lens::new(&[Token::KeySelector("a")], None)],
+                &mut json!([])
+            ),
             Ok(json!([]))
         );
         assert_eq!(
-            get_array_lenses(&[Lens::new("a", None)], &mut value.clone()),
+            get_array_lenses(
+                &[Lens::new(&[Token::KeySelector("a")], None)],
+                &mut value.clone()
+            ),
             Ok(json!([
                 { "a": 1, "b": 2 },
                 { "a": 2, "b": "some" },
@@ -319,7 +326,10 @@ mod tests {
         );
         assert_eq!(
             get_array_lenses(
-                &[Lens::new("a", Some(LensValue::Number(1)))],
+                &[Lens::new(
+                    &[Token::KeySelector("a")],
+                    Some(LensValue::Number(1))
+                )],
                 &mut value.clone()
             ),
             Ok(json!([{ "a": 1, "b": 2 }]))
@@ -327,8 +337,8 @@ mod tests {
         assert_eq!(
             get_array_lenses(
                 &[
-                    Lens::new("a", Some(LensValue::Number(1))),
-                    Lens::new("a", Some(LensValue::Number(2))),
+                    Lens::new(&[Token::KeySelector("a")], Some(LensValue::Number(1))),
+                    Lens::new(&[Token::KeySelector("a")], Some(LensValue::Number(2))),
                 ],
                 &mut value.clone()
             ),
@@ -342,8 +352,8 @@ mod tests {
         assert_eq!(
             get_array_lenses(
                 &[
-                    Lens::new("a", Some(LensValue::Number(1))),
-                    Lens::new("b", Some(LensValue::Number(2))),
+                    Lens::new(&[Token::KeySelector("a")], Some(LensValue::Number(1))),
+                    Lens::new(&[Token::KeySelector("b")], Some(LensValue::Number(2))),
                 ],
                 &mut value.clone()
             ),
@@ -354,8 +364,8 @@ mod tests {
         assert_eq!(
             get_array_lenses(
                 &[
-                    Lens::new("a", Some(LensValue::Number(1))),
-                    Lens::new("b", Some(LensValue::String("some"))),
+                    Lens::new(&[Token::KeySelector("a")], Some(LensValue::Number(1))),
+                    Lens::new(&[Token::KeySelector("b")], Some(LensValue::String("some"))),
                 ],
                 &mut value.clone()
             ),
@@ -367,8 +377,8 @@ mod tests {
         assert_eq!(
             get_array_lenses(
                 &[
-                    Lens::new("a", Some(LensValue::Number(1))),
-                    Lens::new("b", Some(LensValue::Bool(true))),
+                    Lens::new(&[Token::KeySelector("a")], Some(LensValue::Number(1))),
+                    Lens::new(&[Token::KeySelector("b")], Some(LensValue::Bool(true))),
                 ],
                 &mut value.clone()
             ),
@@ -380,8 +390,8 @@ mod tests {
         assert_eq!(
             get_array_lenses(
                 &[
-                    Lens::new("a", Some(LensValue::Number(1))),
-                    Lens::new("b", Some(LensValue::Null)),
+                    Lens::new(&vec![Token::KeySelector("a")], Some(LensValue::Number(1))),
+                    Lens::new(&vec![Token::KeySelector("b")], Some(LensValue::Null)),
                 ],
                 &mut value
             ),

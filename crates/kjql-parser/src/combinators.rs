@@ -10,6 +10,7 @@ use nom::{
         multispace0,
     },
     combinator::{
+        iterator,
         map,
         map_res,
         opt,
@@ -30,6 +31,8 @@ use nom::{
 use crate::tokens::{
     Index,
     LensValue,
+    Range,
+    Token,
 };
 
 /// Flatten operator.
@@ -87,8 +90,7 @@ pub(crate) fn parse_array_index<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,
 }
 
 /// A combinator which parses an array range.
-pub(crate) fn parse_array_range<'a>(
-) -> impl FnMut(&'a str) -> IResult<&'a str, (Option<Index>, Option<Index>)> {
+pub(crate) fn parse_array_range<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, (Option<Index>, Option<Index>)> {
     trim(delimited(
         char('['),
         separated_pair(opt(parse_number), tag(":"), opt(parse_number)),
@@ -102,8 +104,7 @@ pub(crate) fn parse_object_index<'a>() -> impl FnMut(&'a str) -> IResult<&'a str
 }
 
 /// A combinator which parses an object range.
-pub(crate) fn parse_object_range<'a>(
-) -> impl FnMut(&'a str) -> IResult<&'a str, (Option<Index>, Option<Index>)> {
+pub(crate) fn parse_object_range<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, (Option<Index>, Option<Index>)> {
     trim(delimited(
         char('{'),
         separated_pair(opt(parse_number), tag(":"), opt(parse_number)),
@@ -112,7 +113,7 @@ pub(crate) fn parse_object_range<'a>(
 }
 
 /// A combinator which parses a `LensValue::Null`.
-pub(crate) fn parse_null_lens_value<'a, E>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue, E>
+pub(crate) fn parse_null_lens_value<'a, E>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue<'a>, E>
 where
     E: ParseError<&'a str>,
 {
@@ -120,8 +121,7 @@ where
 }
 
 /// A combinator which parses a `LensValue::String`.
-pub(crate) fn parse_string_lens_value<'a, E>(
-) -> impl FnMut(&'a str) -> IResult<&'a str, LensValue, E>
+pub(crate) fn parse_string_lens_value<'a, E>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue<'a>, E>
 where
     E: ParseError<&'a str>,
 {
@@ -136,7 +136,7 @@ pub(crate) fn parse_number_lens_value(input: &str) -> IResult<&str, LensValue> {
 }
 
 /// A combinator which parses a `LensValue::Bool`
-pub(crate) fn parse_bool_lens_value<'a, E>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue, E>
+pub(crate) fn parse_bool_lens_value<'a, E>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue<'a>, E>
 where
     E: ParseError<&'a str>,
 {
@@ -146,8 +146,32 @@ where
     ))
 }
 
+/// A combinator which parses a lens key.
+fn parse_lens_key(input: &str) -> IResult<&str, Token> {
+    alt((
+        map(parse_array_index(), Token::ArrayIndexSelector),
+        map(parse_array_range(), |(start, end)| {
+            Token::ArrayRangeSelector(Range(start, end))
+        }),
+        map(parse_key(), Token::KeySelector),
+        map(parse_multi_key(), Token::MultiKeySelector),
+        map(parse_object_index(), Token::ObjectIndexSelector),
+        map(parse_object_range(), |(start, end)| {
+            Token::ObjectRangeSelector(Range(start, end))
+        }),
+    ))(input)
+}
+
+/// A combinator which parses multiple lens keys.
+fn parse_lens_keys(input: &str) -> IResult<&str, Vec<Token>> {
+    let mut parser_iterator = iterator(input, parse_lens_key);
+    let tokens = parser_iterator.collect::<Vec<Token>>();
+
+    let (rest, _) = parser_iterator.finish()?;
+    Ok((rest, tokens))
+}
 /// A combinator which parses any lens value.
-pub(crate) fn parse_lens_value<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue> {
+pub(crate) fn parse_lens_value<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, LensValue<'a>> {
     alt((
         parse_null_lens_value(),
         parse_string_lens_value(),
@@ -157,17 +181,15 @@ pub(crate) fn parse_lens_value<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, 
 }
 
 /// A combinator which parses a lens.
-pub(crate) fn parse_lens<'a>(
-) -> impl FnMut(&'a str) -> IResult<&'a str, (&'a str, Option<LensValue>)> {
+pub(crate) fn parse_lens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, (Vec<Token<'a>>, Option<LensValue<'a>>)> {
     trim(pair(
-        parse_key(),
+        parse_lens_keys,
         opt(preceded(trim(tag("=")), parse_lens_value())),
     ))
 }
 
 /// A combinator which parses a list of lenses.
-pub(crate) fn parse_lenses<'a>(
-) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<(&'a str, Option<LensValue<'a>>)>> {
+pub(crate) fn parse_lenses<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, Vec<(Vec<Token<'a>>, Option<LensValue<'a>>)>> {
     trim(delimited(
         tag("|={"),
         separated_list1(trim(tag(",")), trim(parse_lens())),
@@ -252,6 +274,7 @@ mod tests {
     use crate::tokens::{
         Index,
         LensValue,
+        Token,
     };
 
     #[test]
@@ -438,18 +461,33 @@ mod tests {
 
     #[test]
     fn check_parse_lens() {
-        assert_eq!(parse_lens()(r#""abc""#).unwrap(), ("", ("abc", None)));
         assert_eq!(
+            ("", (vec![Token::KeySelector("abc")], None)),
+            parse_lens()(r#""abc""#).unwrap()
+        );
+        assert_eq!(
+            ("", (vec![Token::KeySelector("abc")], Some(LensValue::Null))),
             parse_lens()(r#""abc"=null"#).unwrap(),
-            ("", ("abc", Some(LensValue::Null)))
         );
         assert_eq!(
+            (
+                "",
+                (
+                    vec![Token::KeySelector("abc")],
+                    Some(LensValue::Number(123))
+                )
+            ),
             parse_lens()(r#""abc"=123"#).unwrap(),
-            ("", ("abc", Some(LensValue::Number(123))))
         );
         assert_eq!(
+            (
+                "",
+                (
+                    vec![Token::KeySelector("abc")],
+                    Some(LensValue::String("def"))
+                )
+            ),
             parse_lens()(r#""abc"="def""#).unwrap(),
-            ("", ("abc", Some(LensValue::String("def"))))
         );
         assert!(parse_lenses()("").is_err());
     }
@@ -457,16 +495,22 @@ mod tests {
     #[test]
     fn check_parse_lenses() {
         assert_eq!(
-            parse_lenses()(r#"|={"abc", "bcd"=123,"efg"=null,"hij"="test"}"#).unwrap(),
             (
                 "",
                 vec![
-                    ("abc", None),
-                    ("bcd", Some(LensValue::Number(123))),
-                    ("efg", Some(LensValue::Null)),
-                    ("hij", Some(LensValue::String("test")))
+                    (vec![Token::KeySelector("abc")], None),
+                    (
+                        vec![Token::KeySelector("bcd")],
+                        Some(LensValue::Number(123))
+                    ),
+                    (vec![Token::KeySelector("efg")], Some(LensValue::Null)),
+                    (
+                        vec![Token::KeySelector("hij")],
+                        Some(LensValue::String("test"))
+                    )
                 ]
-            )
+            ),
+            parse_lenses()(r#"|={"abc", "bcd"=123,"efg"=null,"hij"="test"}"#).unwrap(),
         );
     }
 }
