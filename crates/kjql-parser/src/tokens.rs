@@ -1,9 +1,13 @@
 use std::{
     fmt,
     fmt::Formatter,
-    num::NonZeroUsize,
+    num::{
+        NonZeroUsize,
+        ParseIntError,
+    },
     string::ToString,
 };
+use std::str::FromStr;
 
 /// `Index` used for arrays and objects.
 /// Internally mapped to a `usize` with the newtype patten.
@@ -28,6 +32,13 @@ impl From<Index> for usize {
 impl fmt::Display for Index {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "Index ({})", self.0)
+    }
+}
+
+impl FromStr for Index {
+    type Err = ParseIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Index(s.parse::<usize>()?))
     }
 }
 
