@@ -254,7 +254,7 @@ mod tests {
                         Token::TruncateOperator,
                         Token::KeySelector("b")
                     ]
-                        .stringify(),
+                    .stringify(),
                 )
             ))
         );
