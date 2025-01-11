@@ -143,6 +143,8 @@ pub enum Token<'a> {
     ArrayIndexSelector(Vec<Index>),
     /// Array range selector.
     ArrayRangeSelector(Range),
+    /// Keys operator
+    KeyOperator,
     /// Flatten operator
     FlattenOperator,
     /// Group separator.
@@ -172,6 +174,7 @@ impl<'a> Token<'a> {
             Token::ArrayRangeSelector(_) => "ArrayRangeSelector",
             Token::FlattenOperator => "FlattenOperator",
             Token::GroupSeparator => "GroupSeparator",
+            Token::KeyOperator => "KeyOperator",
             Token::KeySelector(_) => "KeySelector",
             Token::LensSelector(_) => "LensSelector",
             Token::MultiKeySelector(_) => "MultiKeySelector",
@@ -214,6 +217,7 @@ impl fmt::Display for Token<'_> {
                 write!(f, "{} {formatted_keys}", self.get_name())
             }
             Token::FlattenOperator
+            | Token::KeyOperator
             | Token::GroupSeparator
             | Token::PipeInOperator
             | Token::PipeOutOperator

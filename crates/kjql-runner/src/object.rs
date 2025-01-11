@@ -272,6 +272,31 @@ pub(crate) fn get_object_range(range: &Range, json: &mut Value) -> Result<Value,
     Ok(json!(new_map))
 }
 
+/// Takes a mutalbe reference of a JSON `Value`.
+/// Converts the original object as an array of its keys and returns a JSON `Value` or an error.
+/// Note: the runner checks that the input is a JSON object.
+pub(crate) fn get_object_as_keys(json: &mut Value) -> Result<Value, KjqlRunnerError> {
+    let mut_object = json.as_object().unwrap();
+    let mut result = mut_object
+        .into_iter()
+        .par_bridge()
+        .try_fold_with(Vec::new(), |mut acc: Vec<Value>, (k, _)| {
+            acc.push(json!(k));
+            Ok::<Vec<Value>, KjqlRunnerError>(acc)
+        })
+        .try_reduce(
+            || Vec::new(),
+            |mut a, mut b| {
+                a.append(&mut b);
+                Ok(a)
+            },
+        )?;
+    // Restore the original order.
+    // We can safely unwrap here since the key is a string.
+    result.par_sort_by_key(|v| String::from(v.as_str().unwrap()));
+    Ok(json!(result))
+}
+
 #[cfg(test)]
 mod tests {
     use kjql_parser::tokens::{
@@ -285,6 +310,7 @@ mod tests {
 
     use super::{
         get_flattened_object,
+        get_object_as_keys,
         get_object_indexes,
         get_object_key,
         get_object_multi_key,
@@ -437,5 +463,14 @@ mod tests {
             get_object_range(&Range::new(None, Some(Index::new(5))), &mut value.clone()),
             Err(KjqlRunnerError::InvalidObjectError(value))
         );
+    }
+
+    #[test]
+    fn check_get_object_as_keys() {
+        let value = json!({"a": 1, "b": 2, "c": 3, "d": 4, "e": 5});
+        assert_string_eq(
+            get_object_as_keys(&mut value.clone()),
+            json!(["a", "b", "c", "d", "e"]),
+        )
     }
 }
