@@ -18,6 +18,17 @@ repository = "https://github.com/klion26/kjql"
 version = "2.0.0"
 license = "Apache-2.0"
 
+[workspace.lints.rust]
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+nonstandard_style = { level = "deny", priority = -1 }
+rust_2021_compatibility = { level = "forbid", priority = -1 }
+unreachable_pub = "warn"
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+
 [profile.release]
 codegen-units = 1
 lto = true

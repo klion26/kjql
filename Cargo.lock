@@ -403,6 +403,7 @@ checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
+ "rayon",
 ]
 
 [[package]]
@@ -463,6 +464,7 @@ name = "kjql-runner"
 version = "2.0.0"
 dependencies = [
  "criterion",
+ "indexmap 2.7.0",
  "kjql-parser",
  "rayon",
  "serde_json",

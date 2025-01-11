@@ -15,15 +15,16 @@ use winnow::{
         separated,
         separated_pair,
     },
-    error::{
-    ParserError,
-    },
+    error::ParserError,
     token::{
-        take_until,
-        literal,
         any,
-    }, PResult, Parser
+        literal,
+        take_until,
+    },
+    PResult,
+    Parser,
 };
+
 use crate::tokens::{
     Index,
     LensValue,
@@ -40,7 +41,7 @@ static CURLY_BRACKET_OPEN: char = '{';
 /// Curly brace close.
 static CURLY_BRACKET_CLOSE: char = '}';
 /// Double quote.
-static DOUBLE_QUOTE: char = ':';
+static DOUBLE_QUOTE: char = '"';
 /// Equal.
 static EQUAL: char = '=';
 /// Square brace open.
@@ -86,7 +87,7 @@ pub(crate) fn parse_key<'a>(input: &mut &'a str) -> PResult<&'a str> {
         take_until(0.., r#"""#),
         DOUBLE_QUOTE,
     ))
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses a list of `Index`
@@ -101,12 +102,7 @@ fn parse_keys<'a>(input: &mut &'a str) -> PResult<Vec<&'a str>> {
 
 /// A combinator which parses a list of keys surrounded by curly braces.
 pub(crate) fn parse_multi_key<'a>(input: &mut &'a str) -> PResult<Vec<&'a str>> {
-    delimited(
-        CURLY_BRACKET_OPEN,
-        parse_keys,
-        CURLY_BRACKET_CLOSE,
-    )
-        .parse_next(input)
+    delimited(CURLY_BRACKET_OPEN, parse_keys, CURLY_BRACKET_CLOSE).parse_next(input)
 }
 
 /// A combinator which parses an array of `Index`
@@ -116,7 +112,7 @@ pub(crate) fn parse_array_index(input: &mut &str) -> PResult<Vec<Index>> {
         parse_indexes,
         trim(SQUARE_BRACKET_CLOSE),
     )
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses an array range.
@@ -126,7 +122,7 @@ pub(crate) fn parse_array_range(input: &mut &str) -> PResult<(Option<Index>, Opt
         separated_pair(opt(parse_number), trim(COLON), opt(parse_number)),
         trim(SQUARE_BRACKET_CLOSE),
     ))
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses a list of index surrounded by curly braces.
@@ -136,7 +132,7 @@ pub(crate) fn parse_object_index(input: &mut &str) -> PResult<Vec<Index>> {
         parse_indexes,
         trim(CURLY_BRACKET_CLOSE),
     )
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses an object range.
@@ -146,7 +142,7 @@ pub(crate) fn parse_object_range(input: &mut &str) -> PResult<(Option<Index>, Op
         separated_pair(opt(parse_number), trim(COLON), opt(parse_number)),
         trim(CURLY_BRACKET_CLOSE),
     )
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses a lens key.
@@ -195,7 +191,7 @@ pub(crate) fn parse_lens<'a>(
         parse_lens_keys,
         opt(preceded(trim(EQUAL), parse_lens_value)),
     ))
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses a list of lenses.
@@ -207,7 +203,7 @@ pub(crate) fn parse_lenses<'a>(
         separated(1.., parse_lens, trim(COMMA)),
         trim(CURLY_BRACKET_CLOSE),
     )
-        .parse_next(input)
+    .parse_next(input)
 }
 
 /// A combinator which parses a flatten operator.
@@ -253,7 +249,6 @@ mod tests {
         parse_pipe_in_operator,
         parse_pipe_out_operator,
         parse_truncate_operator,
-        trim,
         FLATTEN,
         GROUP_SEP,
         PIPE_IN,
@@ -349,7 +344,7 @@ mod tests {
     #[test]
     fn check_parse_flatten_operator() {
         assert_eq!(Ok(FLATTEN), parse_flatten_operator(&mut ".."),);
-        assert!(parse_flatten_operator(&mut ""));
+        assert!(parse_flatten_operator(&mut "").is_err());
     }
 
     #[test]
@@ -361,7 +356,7 @@ mod tests {
     #[test]
     fn check_parse_pipe_out_operator() {
         assert_eq!(Ok(PIPE_OUT), parse_pipe_out_operator(&mut "<|"),);
-        assert!(parse_pipe_out_operator(&mut ""));
+        assert!(parse_pipe_out_operator(&mut "").is_err());
     }
 
     #[test]

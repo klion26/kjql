@@ -68,8 +68,8 @@ fn parse_fragment<'a>(input: &mut &'a str) -> PResult<Token<'a>> {
                 ))
             },
             '.' => parse_flatten_operator.value(Token::FlattenOperator),
-            '<' => parse_group_separator.value(Token::GroupSeparator),
-            ',' => parse_pipe_out_operator.value(Token::PipeOutOperator),
+            '<' => parse_pipe_out_operator.value(Token::PipeOutOperator),
+            ',' => parse_group_separator.value(Token::GroupSeparator),
             '!' => parse_truncate_operator.value(Token::TruncateOperator),
             _ => fail
         }
@@ -267,32 +267,32 @@ mod tests {
 
     #[test]
     fn check_flatten_operator() {
-        assert_eq!(parse_fragment(".."), Ok(("", Token::FlattenOperator)));
-        assert_eq!(parse_fragment(" .. "), Ok(("", Token::FlattenOperator)));
+        assert_eq!(parse_fragment(&mut ".."), Ok(Token::FlattenOperator));
+        assert_eq!(parse_fragment(&mut " .. "), Ok(Token::FlattenOperator));
     }
 
     #[test]
     fn check_pipe_in_operator() {
-        assert_eq!(parse_fragment("|>"), Ok(("", Token::PipeInOperator)));
-        assert_eq!(parse_fragment(" |> "), Ok(("", Token::PipeInOperator)));
+        assert_eq!(parse_fragment(&mut "|>"), Ok(Token::PipeInOperator));
+        assert_eq!(parse_fragment(&mut " |> "), Ok(Token::PipeInOperator));
     }
 
     #[test]
     fn check_pipe_out_operator() {
-        assert_eq!(parse_fragment("<|"), Ok(("", Token::PipeOutOperator)));
-        assert_eq!(parse_fragment(" <| "), Ok(("", Token::PipeOutOperator)));
+        assert_eq!(parse_fragment(&mut "<|"), Ok(Token::PipeOutOperator));
+        assert_eq!(parse_fragment(&mut " <| "), Ok(Token::PipeOutOperator));
     }
 
     #[test]
     fn check_truncate_operator() {
-        assert_eq!(parse_fragment("!"), Ok(("", Token::TruncateOperator)));
-        assert_eq!(parse_fragment(" ! "), Ok(("", Token::TruncateOperator)));
+        assert_eq!(parse_fragment(&mut "!"), Ok(Token::TruncateOperator));
+        assert_eq!(parse_fragment(&mut " ! "), Ok(Token::TruncateOperator));
     }
 
     #[test]
     fn check_group_separator() {
-        assert_eq!(parse_fragment(","), Ok(("", Token::GroupSeparator)));
-        assert_eq!(parse_fragment(" , "), Ok(("", Token::GroupSeparator)));
+        assert_eq!(parse_fragment(&mut ","), Ok(Token::GroupSeparator));
+        assert_eq!(parse_fragment(&mut " , "), Ok(Token::GroupSeparator));
     }
 
     #[test]
@@ -312,7 +312,6 @@ mod tests {
             })
         );
         assert_eq!(
-            parse(r#""this"[9,0]|>"some"<|"ok"..!"#),
             Ok(vec![
                 Token::KeySelector("this"),
                 Token::ArrayIndexSelector(vec![Index(9), Index(0)]),
@@ -323,6 +322,7 @@ mod tests {
                 Token::FlattenOperator,
                 Token::TruncateOperator
             ]),
+            parse(r#""this"[9,0]|>"some"<|"ok"..!"#),
         );
         assert_eq!(
             parse(r#""a"!"b""#),
@@ -332,7 +332,7 @@ mod tests {
                     Token::TruncateOperator,
                     Token::KeySelector("b")
                 ]
-                    .stringify()
+                .stringify()
             ))
         );
     }

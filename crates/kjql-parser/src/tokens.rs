@@ -5,9 +5,9 @@ use std::{
         NonZeroUsize,
         ParseIntError,
     },
+    str::FromStr,
     string::ToString,
 };
-use std::str::FromStr;
 
 /// `Index` used for arrays and objects.
 /// Internally mapped to a `usize` with the newtype patten.

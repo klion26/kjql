@@ -1,9 +1,12 @@
 use std::{
-    collections::HashSet,
     num::NonZeroUsize,
     string::ToString,
 };
 
+use indexmap::{
+    IndexMap,
+    IndexSet,
+};
 use kjql_parser::tokens::{
     Index,
     Range,
@@ -50,22 +53,22 @@ pub(crate) fn get_object_multi_key(
 ) -> Result<Value, KjqlRunnerError> {
     let len = keys.len();
 
-    let (new_map, found_keys) = as_object_mut(json)?
+    let (mut result, found_keys) = as_object_mut(json)?
         .iter_mut()
         .par_bridge()
         .try_fold_with(
-            (Map::with_capacity(len), HashSet::with_capacity(len)),
-            |mut acc: (Map<String, Value>, HashSet<String>), (key, value)| {
-                if keys.iter().any(|s| s == key) {
-                    acc.0.insert(key.to_string(), value.clone());
+            (IndexMap::with_capacity(len), IndexSet::with_capacity(len)),
+            |mut acc: (IndexMap<usize, Value>, IndexSet<String>), (key, value)| {
+                if let Some(index) = keys.iter().position(|s| s == key) {
+                    acc.0.insert(index, value.clone());
                     acc.1.insert(key.to_string());
                 }
 
-                Ok::<(Map<String, Value>, HashSet<String>), KjqlRunnerError>(acc)
+                Ok::<(IndexMap<usize, Value>, IndexSet<String>), KjqlRunnerError>(acc)
             },
         )
         .try_reduce(
-            || (Map::with_capacity(len), HashSet::with_capacity(len)),
+            || (IndexMap::with_capacity(len), IndexSet::with_capacity(len)),
             |mut a, b| {
                 a.0.extend(b.0);
                 a.1.extend(b.1);
@@ -74,7 +77,7 @@ pub(crate) fn get_object_multi_key(
             },
         )?;
 
-    let keys_set: HashSet<String> = keys.iter().map(ToString::to_string).collect();
+    let keys_set: IndexSet<String> = keys.iter().map(ToString::to_string).collect();
 
     let mut keys_not_found: Vec<String> = found_keys
         .symmetric_difference(&keys_set)
@@ -89,6 +92,14 @@ pub(crate) fn get_object_multi_key(
         });
     }
 
+    // Restore the original order.
+    result.par_sort_keys();
+    let new_map = result
+        .into_iter()
+        .fold(Map::with_capacity(len), |mut acc, (index, value)| {
+            acc.insert(keys[index].to_string(), value);
+            acc
+        });
     Ok(json!(new_map))
 }
 
@@ -154,32 +165,42 @@ pub(crate) fn get_object_indexes(
         });
     }
 
-    let result = mut_object
+    let mut result = mut_object
         .iter_mut()
         .enumerate()
         .par_bridge()
         .try_fold_with(
-            Map::with_capacity(len),
-            |mut acc: Map<String, Value>, (index, (key, value))| {
-                if indexes.iter().any(|i| {
+            IndexMap::with_capacity(len),
+            |mut acc: IndexMap<usize, (String, Value)>, (index, (key, value))| {
+                if let Some(index) = indexes.iter().position(|i| {
                     let num: usize = (*i).into();
+
                     num == index
                 }) {
-                    acc.insert(key.to_string(), value.clone());
+                    acc.insert(index, (key.to_string(), value.clone()));
                 }
 
-                Ok::<Map<String, Value>, KjqlRunnerError>(acc)
+                Ok::<IndexMap<usize, (String, Value)>, KjqlRunnerError>(acc)
             },
         )
         .try_reduce(
-            || Map::with_capacity(len),
+            || IndexMap::with_capacity(len),
             |mut a, b| {
                 a.extend(b);
                 Ok(a)
             },
         )?;
 
-    Ok(json!(result))
+    // Restore the original order.
+    result.par_sort_keys();
+
+    let new_map = result
+        .into_iter()
+        .fold(Map::with_capacity(len), |mut acc, (_, (key, value))| {
+            acc.insert(key, value);
+            acc
+        });
+    Ok(json!(new_map))
 }
 
 /// Takes a reference of a `Range` and a mutable reference of a JSON `Value`.
@@ -206,24 +227,24 @@ pub(crate) fn get_object_range(range: &Range, json: &mut Value) -> Result<Value,
     }
 
     let is_natural_order = start < end;
-    let result = mut_object
+    let mut result = mut_object
         .iter_mut()
         .enumerate()
         .par_bridge()
         .try_fold_with(
-            Map::with_capacity(len),
-            |mut acc: Map<String, Value>, (index, (key, value))| {
+            IndexMap::with_capacity(len),
+            |mut acc: IndexMap<usize, (String, Value)>, (index, (key, value))| {
                 if (is_natural_order && index >= start && index <= end)
                     || (!is_natural_order && index <= start && index >= end)
                 {
-                    acc.insert(key.to_string(), value.clone());
+                    acc.insert(index, (key.to_string(), value.clone()));
                 }
 
-                Ok::<Map<String, Value>, KjqlRunnerError>(acc)
+                Ok::<IndexMap<usize, (String, Value)>, KjqlRunnerError>(acc)
             },
         )
         .try_reduce(
-            || Map::with_capacity(len),
+            || IndexMap::with_capacity(len),
             |mut a, mut b| {
                 if is_natural_order {
                     a.extend(b);
@@ -233,7 +254,22 @@ pub(crate) fn get_object_range(range: &Range, json: &mut Value) -> Result<Value,
                 Ok(a)
             },
         )?;
-    Ok(json!(result))
+
+    // Restore the original order.
+    result.par_sort_keys();
+
+    // Reverse if not in natural order.
+    if !is_natural_order {
+        result.reverse();
+    }
+
+    let new_map = result
+        .into_iter()
+        .fold(Map::with_capacity(len), |mut acc, (_, (key, value))| {
+            acc.insert(key, value);
+            acc
+        });
+    Ok(json!(new_map))
 }
 
 #[cfg(test)]
@@ -242,7 +278,10 @@ mod tests {
         Index,
         Range,
     };
-    use serde_json::json;
+    use serde_json::{
+        json,
+        Value,
+    };
 
     use super::{
         get_flattened_object,
@@ -252,6 +291,19 @@ mod tests {
         get_object_range,
     };
     use crate::errors::KjqlRunnerError;
+
+    /// If we perform a direct comparison between the processed value and
+    /// the expected value from the `json!` macro, we might get a false
+    /// positive since the order of the keys is not checked on equality.
+    fn assert_string_eq(processed: Result<Value, KjqlRunnerError>, expected: Value) {
+        let processed = processed.unwrap();
+        println!("{:?}", processed.eq(&expected.clone()));
+        let processed = serde_json::to_string(&processed).unwrap();
+        println!("Expected value:{:?}", expected);
+        let expected = serde_json::to_string(&expected).unwrap();
+        println!("Expected:{:?}", expected);
+        assert_eq!(expected, processed);
+    }
 
     #[test]
     fn check_get_object_key() {
@@ -275,9 +327,9 @@ mod tests {
             get_object_multi_key(&["a", "b", "c"], &mut value.clone()),
             Ok(json!({ "a": 1, "b": 2, "c": 3 }))
         );
-        assert_eq!(
+        assert_string_eq(
             get_object_multi_key(&["c", "a", "b"], &mut value.clone()),
-            Ok(json!({ "c": 3, "a": 1, "b": 2 }))
+            json!({ "c": 3, "a": 1, "b": 2 }),
         );
         assert_eq!(
             get_object_multi_key(&["w", "a", "t"], &mut value.clone()),
@@ -311,15 +363,23 @@ mod tests {
     fn check_get_object_indexes() {
         let value = json!({ "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 });
 
+        assert_string_eq(
+            get_object_indexes(
+                &[Index::new(4), Index::new(2), Index::new(0)],
+                &mut value.clone(),
+            ),
+            json!({"e": 5, "c": 3, "a": 1}),
+        );
+
         assert_eq!(
+            Err(KjqlRunnerError::IndexOutOfBoundsError {
+                index: 10,
+                parent: value.clone(),
+            }),
             get_object_indexes(
                 &[Index::new(4), Index::new(2), Index::new(10)],
                 &mut value.clone()
-            ),
-            Err(KjqlRunnerError::IndexOutOfBoundsError {
-                index: 10,
-                parent: value,
-            })
+            )
         );
     }
 
