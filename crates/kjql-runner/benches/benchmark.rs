@@ -1,7 +1,7 @@
 use criterion::{
+    Criterion,
     criterion_group,
     criterion_main,
-    Criterion,
 };
 use kjql_runner::runner::raw;
 use serde_json::json;

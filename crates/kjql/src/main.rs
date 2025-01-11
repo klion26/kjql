@@ -8,9 +8,9 @@ use std::{
 };
 
 use anyhow::{
-    anyhow,
     Context,
     Result,
+    anyhow,
 };
 use args::Args;
 use clap::Parser;
@@ -27,12 +27,12 @@ use serde_stacker::Deserializer;
 use tokio::{
     fs::File,
     io::{
-        stdin,
-        stdout,
         AsyncBufReadExt,
         AsyncReadExt,
         AsyncWriteExt,
         BufReader,
+        stdin,
+        stdout,
     },
 };
 

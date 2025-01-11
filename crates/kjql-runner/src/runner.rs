@@ -5,8 +5,8 @@ use kjql_parser::{
 };
 use rayon::prelude::*;
 use serde_json::{
-    json,
     Value,
+    json,
 };
 
 use crate::{
