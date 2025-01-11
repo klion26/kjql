@@ -19,5 +19,4 @@ kjql-runner = { path = "../kjql-runner" }
 serde = "1.0.217"
 serde_stacker = "0.1.11"
 serde_json.workspace = true
-audit.workspace = true
 tokio = { version = "1.42.0", features = ["fs", "io-std", "io-util", "macros", "rt-multi-thread"] }

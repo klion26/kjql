@@ -13,7 +13,6 @@ version.workspace = true
 
 [dependencies]
 thiserror.workspace = true
-audit.workspace = true
 winnow = { version = "0.6.22", features = ["simd"] }
 
 [lib]
