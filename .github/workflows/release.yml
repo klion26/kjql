@@ -22,7 +22,7 @@ jobs:
       - name: Get project metadata
         id: metadata
         run: |
-          cargo read-manifest -q > metadata.json
+          cargo metadata --no-deps > metadata.json
 
       - name: Distributed Name
         shell: bash
