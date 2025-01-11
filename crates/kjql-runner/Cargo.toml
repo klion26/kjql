@@ -16,9 +16,10 @@ kjql-parser = { path = "../kjql-parser" }
 rayon = "1.10.0"
 serde_json.workspace = true
 thiserror.workspace = true
+audit.workspace = true
 
 [dev-dependencies]
-criterion = "0.4.0"
+criterion = "0.5.1"
 
 [lib]
 path = "src/lib.rs"
