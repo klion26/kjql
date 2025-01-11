@@ -1,0 +1,83 @@
+environment:
+  properties:
+    artifactsDir: out/jreleaser/assemble/kjql/archive
+
+
+project:
+  name: kjql
+  description: A command-line JSON Query Language
+  longDescription: Command lint to query json
+  links:
+    homepage: https://github.com/klion26/kjql
+  authors:
+    - klion26
+  license: MIT
+  inceptionYear: 2025
+
+platform:
+  replacements:
+    'osx-x86_64': 'x86_64-apple-darwin'
+    'osx-aarch_64': 'aarch64-apple-darwin'
+    'linux-x86_64': 'x86_64-unknown-linux-gnu'
+    'linux-aarch_64': 'aarch64-unknown-linux-gnu'
+    'windows-x86_64': 'x86_64-pc-windows-msvc'
+
+release:
+  github:
+    name: kjql
+    overwrite: true
+    branch: main
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: conventional-commits
+      contributors:
+        enabled: true
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
+
+assemble:
+  archive:
+    kjql:
+      active: ALWAYS
+      formats:
+        - ZIP
+      attachPlatform: true
+      fileSets:
+        - input: 'target/{{ osPlatformReplaced }}/release'
+          output: 'bin'
+          includes: [ 'kjql{.exe,}' ]
+        - input: '.'
+          includes: [ 'LICENSE' ]
+
+distributions:
+  kjql:
+    type: BINARY
+    executable:
+      windowsExtension: exe
+    artifacts:
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-apple-darwin/{{distributionName}}-{{projectVersion}}-x86_64-apple-darwin.zip'
+        platform: 'osx-x86_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-aarch64-apple-darwin/{{distributionName}}-{{projectVersion}}-aarch64-apple-darwin.zip'
+        platform: 'osx-aarch_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-unknown-linux-gnu/{{distributionName}}-{{projectVersion}}-x86_64-unknown-linux-gnu.zip'
+        platform: 'linux-x86_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-aarch64-unknown-linux-gnu/{{distributionName}}-{{projectVersion}}-aarch64-unknown-linux-gnu.zip'
+        platform: 'linux-aarch_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-pc-windows-msvc/{{distributionName}}-{{projectVersion}}-x86_64-pc-windows-msvc.zip'
+        platform: 'windows-x86_64'
+packagers:
+  brew:
+    active: ALWAYS
+    continueOnError: false
+    formulaName: kjql
+    multiPlatform: true
+    commitAuthor:
+      name: jreleaserbot
+      email: jreleaser@kordamp.org
+    repository:
+      active: ALWAYS
+      owner: klion26
+      name: homebrew-tap
+      username: klion26
+      token: '{{ secrets.HOMEBREW_TOKEN }}'
+      commitMessage: '{{distributionName}} {{tagName}}'

@@ -1,0 +1,174 @@
+name: Release
+
+run-name: Release by @${{ github.actor }} for ${{ github.ref_name }}(${{ github.ref_type }} )
+
+# Build on every semantic versioned tag
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+    outputs:
+      NAME: ${{ env.NAME }}
+      VERSION: ${{ env.VERSION }}
+      DIST_NAME: ${{ env.DIST_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get project metadata
+        id: metadata
+        run: |
+          cargo read-manifest -q > metadata.json
+
+      - name: Distributed Name
+        shell: bash
+        run: |
+          name=$(jq -r .name metadata.json)
+          version=$(jq -r .version metadata.json)
+          distName="$name-$version"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "DIST_NAME=$distName" >> "$GITHUB_ENV"
+          echo "$name : $version : $distName"
+
+  build:
+    name: 'Build ${{ matrix.job.target }}'
+    needs: [ precheck ]
+    strategy:
+      fail-fast: true
+      matrix:
+        job:
+          - { target: aarch64-apple-darwin        , os: macos-11     ,                  jreleaser_platform: osx-aarch_64 }
+          - { target: x86_64-apple-darwin         , os: macos-11     ,                  jreleaser_platform: osx-x86_64 }
+          - { target: x86_64-pc-windows-msvc      , os: windows-2019 ,                  jreleaser_platform: windows-x86_64 }
+          - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04 ,                  jreleaser_platform: linux-x86_64 }
+          - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true, jreleaser_platform: linux-aarch_64 }
+    runs-on: ${{ matrix.job.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Configure the Rust toolchain
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.job.target }}
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+          echo ${{ needs.precheck.outputs.VERSION }}
+          echo ${{ needs.precheck.outputs.NAME }}
+          echo ${{ needs.precheck.outputs.DIST_NAME }}
+
+      # the below can get metadata for different os and the result will set the env with name DIST_NAME
+      #      - name: Get project metadata
+      #        id: metadata
+      #        run: |
+      #          cargo read-manifest -q > metadata.json
+      #
+      #      - name: Extract distributionName(linux & mac)
+      #        if: runner.os == 'Linux' ||  runner.os  == 'macOS'
+      #        run: |
+      #          echo "DIST_NAME=$(jq -r '.name + "-" + .version' metadata.json)" >> "$GITHUB_ENV"
+      #
+      #      - name: Extract distributionName(windows)
+      #        if: runner.os == 'Windows'
+      #        shell: powershell
+      #        run: |
+      #          $name = (Get-Content -Path Cargo.toml | Select-String -Pattern '^name *=').Line.Split('=')[1].Trim().Trim('"')
+      #          $version = (Get-Content -Path Cargo.toml | Select-String -Pattern '^version *=').Line.Split('=')[1].Trim().Trim('"')
+      #          $distName = "$name-$version"
+      #          echo $distName
+      #          echo "DIST_NAME=$distName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      #
+      #      - name: Use distributionName
+      #        run: echo "Distribution name is ${{ env.DIST_NAME }}"
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.job.use-cross }}
+          command: build
+          args: --locked --release --target=${{ matrix.job.target }}
+
+      # Assemble the zipball
+      - name: Assemble
+        uses: jreleaser/release-action@v2
+        with:
+          version: 1.12.0
+          arguments: assemble
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PLATFORM_OVERRIDE: ${{ matrix.job.jreleaser_platform }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.JRELEASER_HOMEBREW_GITHUB_TOKEN }}
+
+      # Upload archive
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          # name need be the same as the artifacts' path in jreleaser.yml
+          name: ${{ needs.precheck.outputs.DIST_NAME }}-${{ matrix.job.target }}
+          path: |
+            out/jreleaser/assemble/kjql/archive/*.zip
+
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-output-${{ matrix.job.target }}
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
+
+  release:
+    needs: [ precheck, build ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Release
+        uses: jreleaser/release-action@v2
+        with:
+          version: 1.12.0
+          arguments: full-release -PartifactsDir=artifacts -PskipArchiveResolver
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.JRELEASER_HOMEBREW_GITHUB_TOKEN }}
+
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-release-logs
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
