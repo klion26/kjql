@@ -27,8 +27,8 @@ jobs:
       - name: Distributed Name
         shell: bash
         run: |
-          name=$(jq -r 'packages.[0].name' metadata.json)
-          version=$(jq -r 'packages.[0].version' metadata.json)
+          name=$(jq -r '.packages.[0].name' metadata.json)
+          version=$(jq -r '.packages.[0].version' metadata.json)
           distName="$name-$version"
           echo "NAME=$name" >> "$GITHUB_ENV"
           echo "VERSION=$version" >> "$GITHUB_ENV"
